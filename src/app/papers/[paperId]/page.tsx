@@ -48,7 +48,7 @@ export default function PaperPage({ params }: { params: { paperId: string } }) {
                       </a>
                     </Button>
                     <Button asChild variant="outline">
-                      <Link href="/submit-paper">
+                      <Link href={`/submit-paper?paperId=${paper.id}`}>
                         <Replace className="mr-2 h-4 w-4" />
                         Replace
                       </Link>

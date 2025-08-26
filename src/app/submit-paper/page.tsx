@@ -1,8 +1,11 @@
+
 'use client';
 
+import { Suspense, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,8 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, Loader2, FileUp } from 'lucide-react';
-import { useState } from 'react';
+import { Upload, Loader2, FileUp, Replace } from 'lucide-react';
+import { mockPapers } from '@/lib/mock-data';
 
 const paperSchema = z.object({
   subject: z.string().min(3, { message: 'Subject must be at least 3 characters long.' }),
@@ -22,7 +25,7 @@ const paperSchema = z.object({
   yearOfStudy: z.string({ required_error: 'Please select the year of study.' }),
   semester: z.string({ required_error: 'Please select a semester.' }),
   totalQuestions: z.string().min(1, {message: 'Please enter the total number of questions.'}).regex(/^\d+$/, { message: "Please enter a valid number."}),
-  file: z.any().refine((file) => file?.length == 1, 'File is required.'),
+  file: z.any().refine((files) => files?.length > 0, 'File is required.'),
 });
 
 const years = ['2024', '2023', '2022', '2021', '2020'];
@@ -32,9 +35,14 @@ const campuses = ['RK Valley', 'Nuzvid', 'Srikakulam', 'Ongole'];
 const yearsOfStudy = ['P1', 'P2', 'E1', 'E2', 'E3', 'E4'];
 const semesters = ['1', '2'];
 
-export default function SubmitPaperPage() {
+
+function SubmitPaperFormComponent() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const paperId = searchParams.get('paperId');
+  const [isEditMode, setIsEditMode] = useState(!!paperId);
 
   const form = useForm<z.infer<typeof paperSchema>>({
     resolver: zodResolver(paperSchema),
@@ -44,29 +52,62 @@ export default function SubmitPaperPage() {
     }
   });
 
+  useEffect(() => {
+    if (paperId) {
+      const paperToEdit = mockPapers.find(p => p.id === paperId);
+      if (paperToEdit) {
+        setIsEditMode(true);
+        form.reset({
+          subject: paperToEdit.subject,
+          year: paperToEdit.year.toString(),
+          examType: paperToEdit.examType,
+          branch: paperToEdit.branch,
+          campus: paperToEdit.campus,
+          yearOfStudy: paperToEdit.yearOfStudy,
+          semester: paperToEdit.semester.toString(),
+          totalQuestions: paperToEdit.totalQuestions.toString(),
+          file: undefined, 
+        });
+      }
+    }
+  }, [paperId, form]);
+
   const onSubmit = (values: z.infer<typeof paperSchema>) => {
     setIsSubmitting(true);
     console.log(values);
     // Simulate API call
     setTimeout(() => {
-      toast({
-        title: 'Paper Submitted!',
-        description: 'Thank you for your contribution. It will be reviewed shortly.',
-      });
-      form.reset({ subject: '', file: undefined, totalQuestions: '' });
+      if (isEditMode) {
+        toast({
+          title: 'Paper Replaced!',
+          description: 'The question paper has been successfully updated.',
+        });
+        router.push(`/papers/${paperId}`);
+      } else {
+        toast({
+          title: 'Paper Submitted!',
+          description: 'Thank you for your contribution. It will be reviewed shortly.',
+        });
+        form.reset({ subject: '', file: undefined, totalQuestions: '' });
+      }
       setIsSubmitting(false);
     }, 1500);
   };
+
+  const PageIcon = isEditMode ? Replace : FileUp;
+  const pageTitle = isEditMode ? 'Replace Paper' : 'Submit a Paper';
+  const pageDescription = isEditMode ? 'Upload a new file and update the details for this question paper.' : 'Help the community grow by sharing past question papers.';
+  const buttonText = isEditMode ? 'Replace Paper' : 'Submit Paper';
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8">
       <section className="mb-12 space-y-4 text-center">
         <h1 className="font-headline text-4xl font-bold tracking-tighter sm:text-5xl flex items-center justify-center gap-3">
-          <FileUp className="h-10 w-10 text-primary" />
-          Submit a Paper
+          <PageIcon className="h-10 w-10 text-primary" />
+          {pageTitle}
         </h1>
         <p className="mx-auto max-w-[700px] text-lg text-muted-foreground">
-          Help the community grow by sharing past question papers.
+          {pageDescription}
         </p>
       </section>
 
@@ -114,7 +155,7 @@ export default function SubmitPaperPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Academic Year</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger><SelectValue placeholder="Select year" /></SelectTrigger>
                         </FormControl>
@@ -132,7 +173,7 @@ export default function SubmitPaperPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Exam Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                          <FormControl>
                           <SelectTrigger><SelectValue placeholder="Select exam type" /></SelectTrigger>
                         </FormControl>
@@ -150,7 +191,7 @@ export default function SubmitPaperPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Branch</FormLabel>
-                       <Select onValueChange={field.onChange} defaultValue={field.value}>
+                       <Select onValueChange={field.onChange} value={field.value}>
                          <FormControl>
                           <SelectTrigger><SelectValue placeholder="Select branch" /></SelectTrigger>
                         </FormControl>
@@ -168,7 +209,7 @@ export default function SubmitPaperPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Campus</FormLabel>
-                       <Select onValueChange={field.onChange} defaultValue={field.value}>
+                       <Select onValueChange={field.onChange} value={field.value}>
                          <FormControl>
                           <SelectTrigger><SelectValue placeholder="Select campus" /></SelectTrigger>
                         </FormControl>
@@ -186,7 +227,7 @@ export default function SubmitPaperPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Year of Study</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger><SelectValue placeholder="Select year of study" /></SelectTrigger>
                         </FormControl>
@@ -204,7 +245,7 @@ export default function SubmitPaperPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Semester</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                            <SelectTrigger><SelectValue placeholder="Select semester" /></SelectTrigger>
                         </FormControl>
@@ -221,13 +262,13 @@ export default function SubmitPaperPage() {
                <FormField
                 control={form.control}
                 name="file"
-                render={({ field }) => (
+                render={({ field: { onChange, value, ...rest } }) => (
                   <FormItem>
                     <FormLabel>Question Paper File</FormLabel>
                     <FormControl>
                        <div className="relative">
                            <Upload className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                           <Input type="file" className="pl-9" accept=".pdf" onChange={(e) => field.onChange(e.target.files)} />
+                           <Input type="file" className="pl-9" accept="image/*,.pdf,.doc,.docx" onChange={(e) => onChange(e.target.files)} />
                        </div>
                     </FormControl>
                     <FormMessage />
@@ -238,7 +279,7 @@ export default function SubmitPaperPage() {
               <div className="flex justify-end">
                 <Button type="submit" disabled={isSubmitting} size="lg" className="font-bold">
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Submit Paper
+                  {buttonText}
                 </Button>
               </div>
             </form>
@@ -246,5 +287,13 @@ export default function SubmitPaperPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function SubmitPaperPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SubmitPaperFormComponent />
+    </Suspense>
   );
 }
