@@ -13,7 +13,7 @@ import {
 import { Filter, Search } from 'lucide-react';
 
 interface PaperSearchProps {
-    onSearch: (filters: { branch: string; year: string; subject: string, yearOfStudy: string, semester: string, campus: string }) => void;
+    onSearch: (filters: { branch: string; year: string; subject: string, yearOfStudy: string, semester: string, campus: string, examType: string }) => void;
 }
 
 export function PaperSearch({ onSearch }: PaperSearchProps) {
@@ -23,9 +23,10 @@ export function PaperSearch({ onSearch }: PaperSearchProps) {
   const [yearOfStudy, setYearOfStudy] = useState('all');
   const [semester, setSemester] = useState('all');
   const [campus, setCampus] = useState('all');
+  const [examType, setExamType] = useState('all');
 
   const handleSearchClick = () => {
-    onSearch({ branch, year, subject, yearOfStudy, semester, campus });
+    onSearch({ branch, year, subject, yearOfStudy, semester, campus, examType });
   };
   
   const years = ['2024', '2023', '2022', '2021'];
@@ -33,6 +34,7 @@ export function PaperSearch({ onSearch }: PaperSearchProps) {
   const campuses = ['RK Valley', 'Nuzvid', 'Srikakulam', 'Ongole'];
   const yearsOfStudy = ['P1', 'P2', 'E1', 'E2', 'E3', 'E4'];
   const semesters = ['1', '2'];
+  const examTypes = ['mid1', 'mid2', 'mid3', 'Final Sem Exam'];
 
   return (
     <div className="rounded-lg border bg-card p-6 shadow-md">
@@ -40,7 +42,7 @@ export function PaperSearch({ onSearch }: PaperSearchProps) {
         <Filter className="mr-2 h-5 w-5 text-primary" />
         <h3 className="font-headline text-xl font-semibold">Filter Papers</h3>
       </div>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Select value={branch} onValueChange={setBranch}>
           <SelectTrigger>
             <SelectValue placeholder="Select Branch" />
@@ -58,6 +60,16 @@ export function PaperSearch({ onSearch }: PaperSearchProps) {
           <SelectContent>
             <SelectItem value="all">All Years</SelectItem>
             {years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        
+        <Select value={examType} onValueChange={setExamType}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select Exam Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Exam Types</SelectItem>
+            {examTypes.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
           </SelectContent>
         </Select>
 
@@ -91,7 +103,7 @@ export function PaperSearch({ onSearch }: PaperSearchProps) {
           </SelectContent>
         </Select>
 
-        <div className="lg:col-span-5">
+        <div className="lg:col-span-3">
             <div className="relative">
                 <Input
                     placeholder="Search by subject (e.g., Mathematics-II)"

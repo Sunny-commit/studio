@@ -9,13 +9,16 @@ import type { QuestionPaper } from '@/lib/types';
 export default function DashboardPage() {
   const [filteredPapers, setFilteredPapers] = useState<QuestionPaper[]>(mockPapers);
 
-  const handleSearch = (filters: { branch: string; year: string; subject: string; yearOfStudy: string; semester: string; campus: string; }) => {
+  const handleSearch = (filters: { branch: string; year: string; subject: string; yearOfStudy: string; semester: string; campus: string; examType: string; }) => {
     let papers = mockPapers;
     if (filters.branch && filters.branch !== 'all') {
       papers = papers.filter(p => p.branch === filters.branch);
     }
     if (filters.year && filters.year !== 'all') {
       papers = papers.filter(p => p.year.toString() === filters.year);
+    }
+    if (filters.examType && filters.examType !== 'all') {
+      papers = papers.filter(p => p.examType === filters.examType);
     }
     if (filters.yearOfStudy && filters.yearOfStudy !== 'all') {
       papers = papers.filter(p => p.yearOfStudy === filters.yearOfStudy);
