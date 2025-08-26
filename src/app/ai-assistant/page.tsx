@@ -40,7 +40,7 @@ export default function AIAssistantPage() {
     },
   });
 
-  const fileRef = form.register('mediaFile');
+  //const fileRef = form.register('mediaFile');
 
   const toBase64 = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
@@ -185,7 +185,7 @@ export default function AIAssistantPage() {
                           type="file"
                           className="sr-only"
                           accept=".pdf,image/*"
-                          {...fileRef}
+                      //    {...fileRef}
                           onChange={(e) => {
                             field.onChange(e.target.files);
                             handleFileChange(e);
