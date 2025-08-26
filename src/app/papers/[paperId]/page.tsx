@@ -5,9 +5,10 @@ import { SolutionCard } from '@/components/solution-card';
 import { AddSolutionForm } from '@/components/add-solution-form';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { FileText, ChevronDown, CheckCircle2 } from 'lucide-react';
+import { FileText, ChevronDown, CheckCircle2, Download } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 
 export default function PaperPage({ params }: { params: { paperId: string } }) {
   const paper = mockPapers.find((p) => p.id === params.paperId);
@@ -35,7 +36,15 @@ export default function PaperPage({ params }: { params: { paperId: string } }) {
         <div className="lg:col-span-2 space-y-8">
            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center"><FileText className="mr-3 h-6 w-6 text-primary"/> Question Paper</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center"><FileText className="mr-3 h-6 w-6 text-primary"/> Question Paper</CardTitle>
+                  <Button asChild>
+                    <a href={paper.fileUrl} download>
+                      <Download className="mr-2 h-4 w-4" />
+                      Download
+                    </a>
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="aspect-[8.5/11] w-full overflow-hidden rounded-md border">
