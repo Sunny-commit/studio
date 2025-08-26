@@ -176,7 +176,7 @@ export default function AIAssistantPage() {
                   name="mediaFile"
                   render={({ field }) => (
                     <Button asChild variant="outline" size="icon" className="relative shrink-0">
-                      <>
+                      <div>
                         <label htmlFor="file-upload" className="cursor-pointer">
                           <Paperclip />
                         </label>
@@ -192,7 +192,7 @@ export default function AIAssistantPage() {
                           }}
                           disabled={isSubmitting}
                         />
-                      </>
+                      </div>
                     </Button>
                   )}
                 />
