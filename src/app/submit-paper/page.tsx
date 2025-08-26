@@ -18,6 +18,7 @@ const paperSchema = z.object({
   year: z.string({ required_error: 'Please select a year.' }),
   examType: z.string({ required_error: 'Please select an exam type.' }),
   branch: z.string({ required_error: 'Please select a branch.' }),
+  campus: z.string({ required_error: 'Please select a campus.' }),
   yearOfStudy: z.string({ required_error: 'Please select the year of study.' }),
   semester: z.string({ required_error: 'Please select a semester.' }),
   file: z.any().refine((file) => file?.length == 1, 'File is required.'),
@@ -26,6 +27,7 @@ const paperSchema = z.object({
 const years = ['2024', '2023', '2022', '2021', '2020'];
 const examTypes = ['mid1', 'mid2', 'mid3', 'Final Sem Exam'];
 const branches = ['CSE', 'ECE', 'MECH', 'CIVIL'];
+const campuses = ['RK Valley', 'Nuzvid', 'Srikakulam', 'Ongole'];
 const yearsOfStudy = ['P1', 'P2', 'E1', 'E2', 'E3', 'E4'];
 const semesters = ['1', '2'];
 
@@ -134,6 +136,24 @@ export default function SubmitPaperPage() {
                         </FormControl>
                         <SelectContent>
                            {branches.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="campus"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Campus</FormLabel>
+                       <Select onValueChange={field.onChange} defaultValue={field.value}>
+                         <FormControl>
+                          <SelectTrigger><SelectValue placeholder="Select campus" /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                           {campuses.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                         </SelectContent>
                       </Select>
                       <FormMessage />

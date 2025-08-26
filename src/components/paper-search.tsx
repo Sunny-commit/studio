@@ -13,7 +13,7 @@ import {
 import { Filter, Search } from 'lucide-react';
 
 interface PaperSearchProps {
-    onSearch: (filters: { branch: string; year: string; subject: string, yearOfStudy: string, semester: string }) => void;
+    onSearch: (filters: { branch: string; year: string; subject: string, yearOfStudy: string, semester: string, campus: string }) => void;
 }
 
 export function PaperSearch({ onSearch }: PaperSearchProps) {
@@ -22,13 +22,15 @@ export function PaperSearch({ onSearch }: PaperSearchProps) {
   const [subject, setSubject] = useState('');
   const [yearOfStudy, setYearOfStudy] = useState('all');
   const [semester, setSemester] = useState('all');
+  const [campus, setCampus] = useState('all');
 
   const handleSearchClick = () => {
-    onSearch({ branch, year, subject, yearOfStudy, semester });
+    onSearch({ branch, year, subject, yearOfStudy, semester, campus });
   };
   
   const years = ['2024', '2023', '2022', '2021'];
   const branches = ['CSE', 'ECE', 'MECH', 'CIVIL'];
+  const campuses = ['RK Valley', 'Nuzvid', 'Srikakulam', 'Ongole'];
   const yearsOfStudy = ['P1', 'P2', 'E1', 'E2', 'E3', 'E4'];
   const semesters = ['1', '2'];
 
@@ -38,7 +40,7 @@ export function PaperSearch({ onSearch }: PaperSearchProps) {
         <Filter className="mr-2 h-5 w-5 text-primary" />
         <h3 className="font-headline text-xl font-semibold">Filter Papers</h3>
       </div>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Select value={branch} onValueChange={setBranch}>
           <SelectTrigger>
             <SelectValue placeholder="Select Branch" />
@@ -79,7 +81,17 @@ export function PaperSearch({ onSearch }: PaperSearchProps) {
           </SelectContent>
         </Select>
 
-        <div className="md:col-span-4">
+        <Select value={campus} onValueChange={setCampus}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select Campus" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Campuses</SelectItem>
+            {campuses.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
+        <div className="lg:col-span-5">
             <div className="relative">
                 <Input
                     placeholder="Search by subject (e.g., Mathematics-II)"

@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { QuestionPaper } from '@/lib/types';
-import { BookOpen, ArrowRight } from 'lucide-react';
+import { BookOpen, ArrowRight, MapPin } from 'lucide-react';
 
 interface PaperCardProps {
   paper: QuestionPaper;
@@ -20,9 +20,13 @@ export function PaperCard({ paper }: PaperCardProps) {
         <CardTitle className="font-headline text-lg pt-2">{paper.subject}</CardTitle>
         <CardDescription>{paper.year}</CardDescription>
       </CardHeader>
-      <CardContent className="flex-grow">
+      <CardContent className="flex-grow space-y-2">
         <div className="flex space-x-2">
             <Badge variant="outline">{paper.branch}</Badge>
+        </div>
+        <div className="flex items-center text-sm text-muted-foreground">
+            <MapPin className="h-4 w-4 mr-1.5" />
+            <span>{paper.campus}</span>
         </div>
       </CardContent>
       <CardFooter>
