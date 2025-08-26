@@ -29,4 +29,6 @@ export interface QuestionPaper {
   branch: 'CSE' | 'ECE' | 'MECH' | 'CIVIL';
   fileUrl: string;
   questions: Question[];
+  yearOfStudy: 'P1' | 'P2' | 'E1' | 'E2' | 'E3' | 'E4';
+  semester: 1 | 2;
 }

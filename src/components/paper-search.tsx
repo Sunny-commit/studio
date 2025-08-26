@@ -13,20 +13,24 @@ import {
 import { Filter, Search } from 'lucide-react';
 
 interface PaperSearchProps {
-    onSearch: (filters: { branch: string; year: string; subject: string }) => void;
+    onSearch: (filters: { branch: string; year: string; subject: string, yearOfStudy: string, semester: string }) => void;
 }
 
 export function PaperSearch({ onSearch }: PaperSearchProps) {
   const [branch, setBranch] = useState('all');
   const [year, setYear] = useState('all');
   const [subject, setSubject] = useState('');
+  const [yearOfStudy, setYearOfStudy] = useState('all');
+  const [semester, setSemester] = useState('all');
 
   const handleSearchClick = () => {
-    onSearch({ branch, year, subject });
+    onSearch({ branch, year, subject, yearOfStudy, semester });
   };
   
   const years = ['2024', '2023', '2022', '2021'];
   const branches = ['CSE', 'ECE', 'MECH', 'CIVIL'];
+  const yearsOfStudy = ['P1', 'P2', 'E1', 'E2', 'E3', 'E4'];
+  const semesters = ['1', '2'];
 
   return (
     <div className="rounded-lg border bg-card p-6 shadow-md">
@@ -55,7 +59,27 @@ export function PaperSearch({ onSearch }: PaperSearchProps) {
           </SelectContent>
         </Select>
 
-        <div className="md:col-span-2">
+        <Select value={yearOfStudy} onValueChange={setYearOfStudy}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select Year of Study" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Years of Study</SelectItem>
+            {yearsOfStudy.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
+        <Select value={semester} onValueChange={setSemester}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select Semester" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Semesters</SelectItem>
+            {semesters.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
+        <div className="md:col-span-4">
             <div className="relative">
                 <Input
                     placeholder="Search by subject (e.g., Mathematics-II)"
