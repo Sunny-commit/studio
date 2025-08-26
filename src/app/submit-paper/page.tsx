@@ -24,7 +24,7 @@ const paperSchema = z.object({
 });
 
 const years = ['2024', '2023', '2022', '2021', '2020'];
-const examTypes = ['Mid-1', 'Mid-2', 'Final'];
+const examTypes = ['mid1', 'mid2', 'mid3', 'Final Sem Exam'];
 const branches = ['CSE', 'ECE', 'MECH', 'CIVIL'];
 const yearsOfStudy = ['P1', 'P2', 'E1', 'E2', 'E3', 'E4'];
 const semesters = ['1', '2'];

@@ -25,7 +25,7 @@ export interface QuestionPaper {
   id: string;
   subject: string;
   year: number;
-  examType: 'Mid-1' | 'Mid-2' | 'Final';
+  examType: 'mid1' | 'mid2' | 'mid3' | 'Final Sem Exam';
   branch: 'CSE' | 'ECE' | 'MECH' | 'CIVIL';
   fileUrl: string;
   questions: Question[];
