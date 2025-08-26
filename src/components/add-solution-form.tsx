@@ -9,7 +9,7 @@ import { runFlow } from '@genkit-ai/next/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { Bot, Upload, Loader2, Sparkles } from 'lucide-react';
 import type { Question, User } from '@/lib/types';
@@ -94,8 +94,9 @@ export function AddSolutionForm({ question }: AddSolutionFormProps) {
             name="solutionText"
             render={({ field }) => (
               <FormItem>
+                 <FormLabel>Type your solution</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Type your solution here... (supports basic formatting and LaTeX)" {...field} />
+                  <Textarea placeholder="Supports basic formatting and LaTeX..." {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -111,17 +112,18 @@ export function AddSolutionForm({ question }: AddSolutionFormProps) {
             name="solutionImage"
             render={({ field }) => (
               <FormItem>
+                <FormLabel>Upload an image</FormLabel>
                  <FormControl>
                     <div className="relative">
                         <Upload className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input type="file" className="pl-9" {...field} />
+                        <Input type="file" className="pl-9" accept="image/*,.pdf" onChange={(e) => field.onChange(e.target.files)} />
                     </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <div className="flex justify-between gap-2">
+          <div className="flex justify-between gap-2 pt-2">
             <Button type="button" variant="outline" onClick={handleAiReview} disabled={isReviewing}>
               {isReviewing ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -132,7 +134,7 @@ export function AddSolutionForm({ question }: AddSolutionFormProps) {
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Submit
+              Submit Solution
             </Button>
           </div>
         </form>
