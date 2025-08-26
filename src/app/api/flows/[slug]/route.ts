@@ -6,11 +6,13 @@ import { ai } from '@/ai/genkit';
 import { NextRequest } from 'next/server';
 import { Api, GENKIT_CLIENT_HEADER } from '@genkit-ai/next';
 
+// Ensure all flows are imported before the handler is created.
 import '@/ai/flows/review-solution';
 import '@/ai/flows/private-chat-flow';
 
 const { POST } = Api({
   getFlow: async (slug, body) => {
+    // Make sure the flow is loaded
     const flow = ai.registry.getFlow(slug);
     if (!flow) {
       throw new Error(`Flow not found: ${slug}`);
