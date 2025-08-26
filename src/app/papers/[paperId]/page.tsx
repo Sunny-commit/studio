@@ -7,7 +7,7 @@ import { SolutionCard } from '@/components/solution-card';
 import { AddSolutionForm } from '@/components/add-solution-form';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { FileText, ChevronDown, CheckCircle2, Download, Bot } from 'lucide-react';
+import { FileText, ChevronDown, CheckCircle2, Download, Bot, Replace } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -40,12 +40,20 @@ export default function PaperPage({ params }: { params: { paperId: string } }) {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center"><FileText className="mr-3 h-6 w-6 text-primary"/> Question Paper</CardTitle>
-                  <Button asChild>
-                    <a href={paper.fileUrl} download>
-                      <Download className="mr-2 h-4 w-4" />
-                      Download
-                    </a>
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button asChild>
+                      <a href={paper.fileUrl} download>
+                        <Download className="mr-2 h-4 w-4" />
+                        Download
+                      </a>
+                    </Button>
+                    <Button asChild variant="outline">
+                      <Link href="/submit-paper">
+                        <Replace className="mr-2 h-4 w-4" />
+                        Replace
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
