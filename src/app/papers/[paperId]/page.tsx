@@ -1,11 +1,13 @@
+
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { mockPapers, mockUsers } from '@/lib/mock-data';
 import type { Question } from '@/lib/types';
 import { SolutionCard } from '@/components/solution-card';
 import { AddSolutionForm } from '@/components/add-solution-form';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { FileText, ChevronDown, CheckCircle2, Download } from 'lucide-react';
+import { FileText, ChevronDown, CheckCircle2, Download, Bot } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -69,8 +71,25 @@ export default function PaperPage({ params }: { params: { paperId: string } }) {
             </Card>
         </div>
 
-        <div className="lg:col-span-1">
-          <h2 className="font-headline text-2xl font-semibold mb-4">Questions & Solutions</h2>
+        <div className="lg:col-span-1 space-y-6">
+           <Card className="bg-gradient-to-br from-primary/10 to-background">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3 font-headline">
+                  <Bot className="h-7 w-7 text-primary" />
+                  AI Assistant
+                </CardTitle>
+                 <CardDescription>
+                  Stuck on a question? Get private, one-on-one help from our AI tutor.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button asChild className="w-full font-bold">
+                  <Link href="/ai-assistant">Start Chat</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+          <h2 className="font-headline text-2xl font-semibold">Questions & Solutions</h2>
           {paper.questions.length > 0 ? (
             <Accordion type="single" collapsible className="w-full space-y-4">
               {paper.questions.map((question: Question) => (
