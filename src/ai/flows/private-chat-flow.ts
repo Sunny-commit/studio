@@ -47,6 +47,7 @@ File: {{media url=mediaDataUri}}
 {{/if}}
 
 Please provide a helpful and encouraging response to the user. If the question is complex, break it down.`,
+  model: 'googleai/gemini-1.5-flash',
 });
 
 const privateChatFlow = ai.defineFlow(
