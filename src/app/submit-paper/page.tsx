@@ -21,6 +21,7 @@ const paperSchema = z.object({
   campus: z.string({ required_error: 'Please select a campus.' }),
   yearOfStudy: z.string({ required_error: 'Please select the year of study.' }),
   semester: z.string({ required_error: 'Please select a semester.' }),
+  totalQuestions: z.string().min(1, {message: 'Please enter the total number of questions.'}).regex(/^\d+$/, { message: "Please enter a valid number."}),
   file: z.any().refine((file) => file?.length == 1, 'File is required.'),
 });
 
@@ -37,6 +38,10 @@ export default function SubmitPaperPage() {
 
   const form = useForm<z.infer<typeof paperSchema>>({
     resolver: zodResolver(paperSchema),
+    defaultValues: {
+      subject: '',
+      totalQuestions: '',
+    }
   });
 
   const onSubmit = (values: z.infer<typeof paperSchema>) => {
@@ -48,7 +53,7 @@ export default function SubmitPaperPage() {
         title: 'Paper Submitted!',
         description: 'Thank you for your contribution. It will be reviewed shortly.',
       });
-      form.reset({ subject: '', file: undefined });
+      form.reset({ subject: '', file: undefined, totalQuestions: '' });
       setIsSubmitting(false);
     }, 1500);
   };
@@ -73,19 +78,34 @@ export default function SubmitPaperPage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="subject"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Subject</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Engineering Mathematics-II" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="subject"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Subject</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Engineering Mathematics-II" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="totalQuestions"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Total Questions</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="e.g., 8" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField

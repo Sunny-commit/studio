@@ -5,9 +5,9 @@ import { SolutionCard } from '@/components/solution-card';
 import { AddSolutionForm } from '@/components/add-solution-form';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { FileText, ChevronDown } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { FileText, ChevronDown, CheckCircle2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 
 export default function PaperPage({ params }: { params: { paperId: string } }) {
   const paper = mockPapers.find((p) => p.id === params.paperId);
@@ -15,6 +15,9 @@ export default function PaperPage({ params }: { params: { paperId: string } }) {
   if (!paper) {
     notFound();
   }
+  
+  const answeredQuestions = paper.questions.filter(q => q.solutions.length > 0).length;
+  const progressPercentage = paper.totalQuestions > 0 ? (answeredQuestions / paper.totalQuestions) * 100 : 0;
 
   return (
     <div className="container mx-auto max-w-6xl py-8 px-4">
@@ -29,7 +32,7 @@ export default function PaperPage({ params }: { params: { paperId: string } }) {
       </div>
       
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 space-y-8">
            <Card>
               <CardHeader>
                 <CardTitle className="flex items-center"><FileText className="mr-3 h-6 w-6 text-primary"/> Question Paper</CardTitle>
@@ -38,6 +41,21 @@ export default function PaperPage({ params }: { params: { paperId: string } }) {
                 <div className="aspect-[8.5/11] w-full overflow-hidden rounded-md border">
                    <iframe src={paper.fileUrl} className="h-full w-full" title={`${paper.subject} ${paper.year} Paper`} />
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center"><CheckCircle2 className="mr-3 h-6 w-6 text-primary" /> Progress</CardTitle>
+                <CardDescription>
+                  {answeredQuestions} out of {paper.totalQuestions} questions have at least one solution.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                 <Progress value={progressPercentage} className="h-3" />
+                 <div className="mt-2 text-right text-sm font-medium text-muted-foreground">
+                    {Math.round(progressPercentage)}% Complete
+                 </div>
               </CardContent>
             </Card>
         </div>

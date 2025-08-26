@@ -17,6 +17,7 @@ export const mockPapers: QuestionPaper[] = [
     yearOfStudy: 'E1',
     semester: 2,
     fileUrl: 'https://www.africau.edu/images/default/sample.pdf',
+    totalQuestions: 5,
     questions: [
       {
         id: 'q1a',
@@ -74,6 +75,7 @@ export const mockPapers: QuestionPaper[] = [
     yearOfStudy: 'E2',
     semester: 1,
     fileUrl: 'https://www.africau.edu/images/default/sample.pdf',
+    totalQuestions: 8,
     questions: [],
   },
   {
@@ -86,6 +88,7 @@ export const mockPapers: QuestionPaper[] = [
     yearOfStudy: 'E2',
     semester: 2,
     fileUrl: 'https://www.africau.edu/images/default/sample.pdf',
+    totalQuestions: 5,
     questions: [],
   },
   {
@@ -98,6 +101,7 @@ export const mockPapers: QuestionPaper[] = [
     yearOfStudy: 'E1',
     semester: 2,
     fileUrl: 'https://www.africau.edu/images/default/sample.pdf',
+    totalQuestions: 8,
     questions: [],
   },
 ];
