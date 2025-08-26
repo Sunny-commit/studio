@@ -25,7 +25,7 @@ const paperSchema = z.object({
   yearOfStudy: z.string({ required_error: 'Please select the year of study.' }),
   semester: z.string({ required_error: 'Please select a semester.' }),
   totalQuestions: z.string().min(1, {message: 'Please enter the total number of questions.'}).regex(/^\d+$/, { message: "Please enter a valid number."}),
-  file: z.any().refine((files) => files?.length > 0, 'File is required.'),
+  file: z.any().refine((files) => files?.length > 0 || !!paperId, 'File is required.'),
 });
 
 const years = ['2024', '2023', '2022', '2021', '2020'];
@@ -35,13 +35,14 @@ const campuses = ['RK Valley', 'Nuzvid', 'Srikakulam', 'Ongole'];
 const yearsOfStudy = ['P1', 'P2', 'E1', 'E2', 'E3', 'E4'];
 const semesters = ['1', '2'];
 
+let paperId: string | null = null;
 
 function SubmitPaperFormComponent() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
-  const paperId = searchParams.get('paperId');
+  paperId = searchParams.get('paperId');
   const [isEditMode, setIsEditMode] = useState(!!paperId);
 
   const form = useForm<z.infer<typeof paperSchema>>({
@@ -74,21 +75,28 @@ function SubmitPaperFormComponent() {
 
   const onSubmit = (values: z.infer<typeof paperSchema>) => {
     setIsSubmitting(true);
-    console.log(values);
-    // Simulate API call
+    console.log("Submitting values:", values);
+
+    // Simulate API call to either create or update a paper
     setTimeout(() => {
-      if (isEditMode) {
+      if (isEditMode && paperId) {
+        console.log(`Simulating update for paper ID: ${paperId}`);
+        // In a real app, you'd make an API call to update the database here.
+        // For this mock environment, we can't modify the imported `mockPapers` directly.
         toast({
           title: 'Paper Replaced!',
           description: 'The question paper has been successfully updated.',
         });
+        // We redirect back to the paper page. With a real backend, the new data would be fetched.
         router.push(`/papers/${paperId}`);
       } else {
+        console.log("Simulating creation of new paper");
         toast({
           title: 'Paper Submitted!',
           description: 'Thank you for your contribution. It will be reviewed shortly.',
         });
-        form.reset({ subject: '', file: undefined, totalQuestions: '' });
+        form.reset({ subject: '', totalQuestions: '', file: undefined });
+        router.push('/dashboard');
       }
       setIsSubmitting(false);
     }, 1500);
@@ -209,7 +217,7 @@ function SubmitPaperFormComponent() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Campus</FormLabel>
-                       <Select onValueChange={field.onChange} value={field.value}>
+                       <Select onValuechange={field.onChange} value={field.value}>
                          <FormControl>
                           <SelectTrigger><SelectValue placeholder="Select campus" /></SelectTrigger>
                         </FormControl>
@@ -264,7 +272,7 @@ function SubmitPaperFormComponent() {
                 name="file"
                 render={({ field: { onChange, value, ...rest } }) => (
                   <FormItem>
-                    <FormLabel>Question Paper File</FormLabel>
+                    <FormLabel>Question Paper File {isEditMode && '(Optional)'}</FormLabel>
                     <FormControl>
                        <div className="relative">
                            <Upload className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -297,3 +305,5 @@ export default function SubmitPaperPage() {
     </Suspense>
   );
 }
+
+    
