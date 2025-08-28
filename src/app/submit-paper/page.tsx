@@ -82,14 +82,12 @@ function SubmitPaperFormComponent() {
     try {
       let fileUrl = paperId ? paperCache.getPaperById(paperId)?.fileUrl : '';
       
-      // If a new file is uploaded, handle the upload
       const fileInput = values.file?.[0];
       if (fileInput) {
          toast({
             title: 'Uploading File...',
-            description: 'Please wait while your file is uploaded. This is a placeholder for actual integration.',
+            description: 'Please wait while your file is uploaded to Google Drive.',
           });
-        // In a real app, the response from uploadFile would be a public URL
         fileUrl = await uploadFile(fileInput); 
       }
       
@@ -113,19 +111,19 @@ function SubmitPaperFormComponent() {
         });
         router.push(`/papers/${paperId}`);
       } else {
-        paperCache.addPaper(paperData);
+        const newPaper = paperCache.addPaper(paperData);
         toast({
           title: 'Paper Submitted!',
           description: 'Thank you for your contribution.',
         });
-        router.push('/dashboard');
+        router.push(`/papers/${newPaper.id}`);
       }
     } catch (error) {
        console.error("Submission failed", error);
        toast({
         variant: 'destructive',
         title: 'Submission Failed',
-        description: 'Could not upload the paper. Please try again.',
+        description: 'Could not upload the paper. Please check the console for details.',
       });
     } finally {
         setIsSubmitting(false);
