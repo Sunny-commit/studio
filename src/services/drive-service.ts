@@ -13,7 +13,6 @@ async function getAuthenticatedClient() {
 
   if (!accessToken || !refreshToken) {
     console.warn("Google Drive tokens not found in cookies. User needs to authenticate.");
-    // In a real app, you might throw an error that triggers a re-authentication flow.
     return null;
   }
   
@@ -23,7 +22,6 @@ async function getAuthenticatedClient() {
     !process.env.GOOGLE_REDIRECT_URI
     ) {
       console.error("Google Drive credentials are not set in .env file.");
-      // This is a server configuration error, so we should stop.
       throw new Error("Server is not configured for Google Drive integration.");
   }
 
@@ -38,9 +36,6 @@ async function getAuthenticatedClient() {
     refresh_token: refreshToken,
   });
 
-  // The access token might be expired. The googleapis library can handle refreshing it automatically
-  // if it has a refresh token. It will emit a 'tokens' event when it does.
-  // We can listen for that event to update our stored tokens.
   oauth2Client.on('tokens', (tokens) => {
     if (tokens.access_token) {
        cookies().set('google_access_token', tokens.access_token, {
@@ -65,11 +60,7 @@ export async function uploadFile(file: File): Promise<string> {
   const auth = await getAuthenticatedClient();
 
   if (!auth) {
-    // This is a fallback for when the user is not authenticated.
-    // In a real application, you might prevent the upload entirely or prompt for authentication.
-    console.log("[Drive Service] No auth, using mock upload.");
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return 'https://www.africau.edu/images/default/sample.pdf';
+    throw new Error('User is not authenticated. Please connect to Google Drive first.');
   }
   
   try {
@@ -97,7 +88,7 @@ export async function uploadFile(file: File): Promise<string> {
         throw new Error('File upload succeeded but no ID or view link was returned.');
     }
     
-    // Make the file publicly readable within the organization or to anyone with the link
+    // Make the file publicly readable to anyone with the link
     await drive.permissions.create({
       fileId: fileId,
       requestBody: {
@@ -112,7 +103,6 @@ export async function uploadFile(file: File): Promise<string> {
 
   } catch (error: any) {
     console.error('Failed to upload file to Google Drive.', error.message);
-    // Fallback to a mock URL on failure
     throw new Error('Failed to upload to Google Drive. Please ensure you are authenticated and have permissions.');
   }
 }

@@ -1,14 +1,39 @@
 
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BrainCircuit } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
-export default function SignInPage() {
+
+export default function LandingPage() {
+  const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    // Redirect to dashboard if the user is already authenticated
+    if (!isLoading && isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, isLoading, router]);
+
+  // Optionally, show a loading state while checking auth
+  if (isLoading || isAuthenticated) {
+    return (
+      <div className="flex min-h-screen w-full items-center justify-center">
+        <div>Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-[calc(100vh-10rem)] w-full items-center justify-center p-4">
-      <div className="grid grid-cols-1 gap-16 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-16 lg:grid-cols-2 items-center">
         <div className="flex flex-col justify-center space-y-6">
           <div className="flex items-center gap-3">
             <BrainCircuit className="h-10 w-10 text-primary" />
@@ -19,12 +44,9 @@ export default function SignInPage() {
           <p className="max-w-md text-xl text-foreground/80">
             The collaborative platform to find, solve, and share university exam questions. Ace your exams with community-powered solutions.
           </p>
-          <div className="flex gap-4">
+           <div className="flex gap-4">
             <Button asChild size="lg" className="font-bold">
-              <Link href="/dashboard">Get Started</Link>
-            </Button>
-            <Button asChild size="lg" variant="secondary" className="font-bold">
-              <Link href="#learn-more">Learn More</Link>
+              <Link href="/api/auth/google">Get Started</Link>
             </Button>
           </div>
         </div>
@@ -34,7 +56,7 @@ export default function SignInPage() {
             <Card className="relative w-full max-w-sm">
               <CardHeader className="text-center">
                 <CardTitle className="font-headline text-2xl">Welcome!</CardTitle>
-                <CardDescription>Sign in to continue your journey.</CardDescription>
+                <CardDescription>Sign in with your Google account to continue.</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col space-y-4">

@@ -29,10 +29,15 @@ const paperSchema = z.object({
   yearOfStudy: z.string({ required_error: 'Please select the year of study.' }),
   semester: z.string({ required_error: 'Please select a semester.' }),
   totalQuestions: z.string().min(1, {message: 'Please enter the total number of questions.'}).regex(/^\d+$/, { message: "Please enter a valid number."}),
-  file: z.any().refine((files, ctx) => {
-    // file is required only if it's not edit mode
-    const isEditMode = (ctx as any).path.includes('edit');
-    return isEditMode || (files && files.length > 0);
+  file: z.any().refine((files) => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const isEditMode = !!searchParams.get('paperId');
+    // File is not required in edit mode, but if it is provided, it must have a length > 0
+    if (isEditMode) {
+      return true;
+    }
+    // In create mode, file is required
+    return files && files.length > 0;
   }, 'File is required.'),
 });
 
@@ -52,24 +57,20 @@ function SubmitPaperFormComponent() {
   const isEditMode = !!paperId;
   const { isAuthenticated } = useAuth();
   
-  const defaultValues = isEditMode && paperId 
-    ? paperCache.getPaperById(paperId as string)
-    : {};
+  const existingPaper = isEditMode ? paperCache.getPaperById(paperId) : null;
 
   const form = useForm<z.infer<typeof paperSchema>>({
     resolver: zodResolver(paperSchema),
     defaultValues: {
-      subject: defaultValues?.subject ?? '',
-      year: defaultValues?.year?.toString() ?? '',
-      examType: defaultValues?.examType ?? '',
-      branch: defaultValues?.branch ?? '',
-      campus: defaultValues?.campus ?? '',
-      yearOfStudy: defaultValues?.yearOfStudy ?? '',
-      semester: defaultValues?.semester?.toString() ?? '',
-      totalQuestions: defaultValues?.totalQuestions?.toString() ?? '',
-    },
-    context: {
-        isEditMode
+      subject: existingPaper?.subject ?? '',
+      year: existingPaper?.year?.toString() ?? '',
+      examType: existingPaper?.examType ?? '',
+      branch: existingPaper?.branch ?? '',
+      campus: existingPaper?.campus ?? '',
+      yearOfStudy: existingPaper?.yearOfStudy ?? '',
+      semester: existingPaper?.semester?.toString() ?? '',
+      totalQuestions: existingPaper?.totalQuestions?.toString() ?? '',
+      file: undefined,
     }
   });
   
@@ -84,6 +85,13 @@ function SubmitPaperFormComponent() {
         router.replace(cleanUrl);
     }
   }, [searchParams, toast, router, paperId]);
+  
+  useEffect(() => {
+    if (isEditMode && !existingPaper) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Paper not found.' });
+        router.push('/dashboard');
+    }
+  }, [isEditMode, existingPaper, toast, router]);
 
   const onSubmit = async (values: z.infer<typeof paperSchema>) => {
     if (!isAuthenticated) {
@@ -98,7 +106,7 @@ function SubmitPaperFormComponent() {
     setIsSubmitting(true);
 
     try {
-      let fileUrl = (isEditMode && paperId) ? paperCache.getPaperById(paperId)?.fileUrl : '';
+      let fileUrl = isEditMode ? existingPaper?.fileUrl : '';
       
       const fileInput = values.file?.[0];
       if (fileInput) {
@@ -184,7 +192,7 @@ function SubmitPaperFormComponent() {
                 <h3 className="text-xl font-semibold mb-4">Please Sign In</h3>
                 <p className="text-muted-foreground mb-6">You need to be signed in to submit or replace papers.</p>
                  <Button asChild>
-                    <Link href="/api/auth/google">Sign In with Google</Link>
+                    <Link href={`/api/auth/google?redirect=/submit-paper`}>Sign In with Google</Link>
                 </Button>
              </div>
           ) : (
@@ -347,12 +355,13 @@ function SubmitPaperFormComponent() {
                   )}
                 />
 
-                <div className="flex justify-between items-center">
-                  <Button asChild variant="outline">
-                    <Link href={`/api/auth/google?redirect=${isEditMode ? `/submit-paper?paperId=${paperId}` : '/submit-paper'}`}>
-                        <Power className="mr-2 h-4 w-4"/> Connect Drive
-                    </Link>
-                  </Button>
+                <div className="flex justify-between items-center pt-2">
+                   <Button type="button" variant="outline" asChild>
+                     <Link href={`/api/auth/google?redirect=/submit-paper${paperId ? `?paperId=${paperId}` : ''}`}>
+                       <Power className="mr-2 h-4 w-4" />
+                       Connect Drive
+                     </Link>
+                   </Button>
                   <Button type="submit" disabled={isSubmitting} size="lg" className="font-bold">
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {buttonText}
@@ -374,5 +383,3 @@ export default function SubmitPaperPage() {
     </Suspense>
   );
 }
-
-    

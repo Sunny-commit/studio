@@ -31,17 +31,17 @@ class PaperCache {
     return this.papers.find((p) => p.id === id);
   }
 
-  public addPaper(paper: Omit<QuestionPaper, 'id'>): QuestionPaper {
+  public addPaper(paper: Omit<QuestionPaper, 'id' | 'questions'>): QuestionPaper {
     const newPaper: QuestionPaper = {
         ...paper,
         id: `paper${this.papers.length + 1}`, // simple id generation
         questions: [], // New papers don't have questions yet
     };
-    this.papers.push(newPaper);
+    this.papers.unshift(newPaper); // Add to the beginning of the list
     return newPaper;
   }
   
-  public updatePaper(id: string, updatedData: Partial<Omit<QuestionPaper, 'id'>>): QuestionPaper | null {
+  public updatePaper(id: string, updatedData: Partial<Omit<QuestionPaper, 'id' | 'questions'>>): QuestionPaper | null {
     const paperIndex = this.papers.findIndex((p) => p.id === id);
     if (paperIndex === -1) {
       return null;

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -5,10 +6,22 @@ import { PaperSearch } from '@/components/paper-search';
 import { PaperCard } from '@/components/paper-card';
 import type { QuestionPaper } from '@/lib/types';
 import { paperCache } from '@/lib/paper-cache';
+import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 export default function DashboardPage() {
   const [allPapers, setAllPapers] = useState<QuestionPaper[]>([]);
   const [filteredPapers, setFilteredPapers] = useState<QuestionPaper[]>([]);
+  const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/');
+    }
+  }, [isAuthenticated, isLoading, router]);
 
   useEffect(() => {
     const papers = paperCache.getPapers();
@@ -18,7 +31,7 @@ export default function DashboardPage() {
 
 
   const handleSearch = (filters: { branch: string; year: string; subject: string; yearOfStudy: string; semester: string; campus: string; examType: string; }) => {
-    let papers = allPapers;
+    let papers = [...paperCache.getPapers()];
     if (filters.branch && filters.branch !== 'all') {
       papers = papers.filter(p => p.branch === filters.branch);
     }
@@ -42,14 +55,26 @@ export default function DashboardPage() {
     }
     setFilteredPapers(papers);
   };
+  
+  if (isLoading) {
+    return (
+        <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8 text-center">
+            <p>Loading...</p>
+        </div>
+    );
+  }
+  
+  if (!isAuthenticated) {
+     return null; // or a redirect component
+  }
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8">
-      <section className="mb-12 space-y-4 text-center">
+      <section className="mb-12 space-y-4">
         <h1 className="font-headline text-4xl font-bold tracking-tighter sm:text-5xl">
-          Find Your Question Papers
+          Question Paper Dashboard
         </h1>
-        <p className="mx-auto max-w-[700px] text-lg text-muted-foreground">
+        <p className="max-w-[700px] text-lg text-muted-foreground">
           Search through a vast library of past papers from your university. Filter by branch, year, and subject to quickly find what you need.
         </p>
       </section>
@@ -58,7 +83,7 @@ export default function DashboardPage() {
 
       <section className="mt-12">
         <h2 className="font-headline text-3xl font-bold tracking-tight mb-6">
-          Available Papers
+          Available Papers ({filteredPapers.length})
         </h2>
         {filteredPapers.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -69,7 +94,10 @@ export default function DashboardPage() {
         ) : (
           <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-20 text-center">
              <h3 className="text-xl font-semibold">No Papers Found</h3>
-             <p className="text-muted-foreground mt-2">Try adjusting your search filters.</p>
+             <p className="text-muted-foreground mt-2 max-w-sm">Try adjusting your search filters, or be the first to contribute a paper for this category!</p>
+             <Button asChild className="mt-4">
+                <Link href="/submit-paper">Submit a Paper</Link>
+             </Button>
           </div>
         )}
       </section>
