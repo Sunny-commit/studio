@@ -56,16 +56,12 @@ export default function DashboardPage() {
     setFilteredPapers(papers);
   };
   
-  if (isLoading) {
+  if (isLoading || !isAuthenticated) {
     return (
         <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8 text-center">
             <p>Loading...</p>
         </div>
     );
-  }
-  
-  if (!isAuthenticated) {
-     return null; // or a redirect component
   }
 
   return (

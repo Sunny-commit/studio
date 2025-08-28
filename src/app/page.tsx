@@ -1,14 +1,13 @@
 
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BrainCircuit } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 
 export default function LandingPage() {
@@ -16,14 +15,12 @@ export default function LandingPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Redirect to dashboard if the user is already authenticated
     if (!isLoading && isAuthenticated) {
       router.push('/dashboard');
     }
   }, [isAuthenticated, isLoading, router]);
 
-  // Optionally, show a loading state while checking auth
-  if (isLoading || isAuthenticated) {
+  if (isLoading || (!isLoading && isAuthenticated)) {
     return (
       <div className="flex min-h-screen w-full items-center justify-center">
         <div>Loading...</div>
