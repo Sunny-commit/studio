@@ -18,7 +18,7 @@ import { Upload, Loader2, FileUp, Replace, Power } from 'lucide-react';
 import { paperCache } from '@/lib/paper-cache';
 import { uploadFile } from '@/services/drive-service';
 import type { QuestionPaper } from '@/lib/types';
-
+import { useAuth } from '@/hooks/use-auth';
 
 const paperSchema = z.object({
   subject: z.string().min(3, { message: 'Subject must be at least 3 characters long.' }),
@@ -29,7 +29,11 @@ const paperSchema = z.object({
   yearOfStudy: z.string({ required_error: 'Please select the year of study.' }),
   semester: z.string({ required_error: 'Please select a semester.' }),
   totalQuestions: z.string().min(1, {message: 'Please enter the total number of questions.'}).regex(/^\d+$/, { message: "Please enter a valid number."}),
-  file: z.any().refine((files) => files?.length > 0 || !!paperId, 'File is required.'),
+  file: z.any().refine((files, ctx) => {
+    // file is required only if it's not edit mode
+    const { isEditMode } = ctx.path;
+    return isEditMode || (files && files.length > 0);
+  }, 'File is required.'),
 });
 
 const years = ['2024', '2023', '2022', '2021', '2020'];
@@ -39,70 +43,72 @@ const campuses = ['RK Valley', 'Nuzvid', 'Srikakulam', 'Ongole'];
 const yearsOfStudy = ['P1', 'P2', 'E1', 'E2', 'E3', 'E4'];
 const semesters = ['1', '2'];
 
-let paperId: string | null = null;
-
 function SubmitPaperFormComponent() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
-  paperId = searchParams.get('paperId');
-  const [isEditMode, setIsEditMode] = useState(!!paperId);
+  const paperId = searchParams.get('paperId');
+  const isEditMode = !!paperId;
+  const { isAuthenticated } = useAuth();
+  
+  const defaultValues = isEditMode 
+    ? paperCache.getPaperById(paperId as string)
+    : {};
 
   const form = useForm<z.infer<typeof paperSchema>>({
     resolver: zodResolver(paperSchema),
     defaultValues: {
-      subject: '',
-      totalQuestions: '',
+      subject: defaultValues?.subject ?? '',
+      year: defaultValues?.year?.toString() ?? '',
+      examType: defaultValues?.examType ?? '',
+      branch: defaultValues?.branch ?? '',
+      campus: defaultValues?.campus ?? '',
+      yearOfStudy: defaultValues?.yearOfStudy ?? '',
+      semester: defaultValues?.semester?.toString() ?? '',
+      totalQuestions: defaultValues?.totalQuestions?.toString() ?? '',
+    },
+    context: {
+        isEditMode
     }
   });
   
   useEffect(() => {
-    // Show a toast if the user was just redirected from Google auth
     if (searchParams.has('authed')) {
         toast({
             title: 'Google Drive Connected!',
             description: 'You can now upload files directly to your drive.',
         });
+        // clean up the URL
+        router.replace('/submit-paper');
     }
-  }, [searchParams, toast]);
-
-  useEffect(() => {
-    if (paperId) {
-      const paperToEdit = paperCache.getPaperById(paperId);
-      if (paperToEdit) {
-        setIsEditMode(true);
-        form.reset({
-          subject: paperToEdit.subject,
-          year: paperToEdit.year.toString(),
-          examType: paperToEdit.examType,
-          branch: paperToEdit.branch,
-          campus: paperToEdit.campus,
-          yearOfStudy: paperToEdit.yearOfStudy,
-          semester: paperToEdit.semester.toString(),
-          totalQuestions: paperToEdit.totalQuestions.toString(),
-          file: undefined, 
-        });
-      }
-    }
-  }, [paperId, form]);
+  }, [searchParams, toast, router]);
 
   const onSubmit = async (values: z.infer<typeof paperSchema>) => {
+    if (!isAuthenticated) {
+        toast({
+            variant: 'destructive',
+            title: 'Not Authenticated',
+            description: 'Please sign in with Google to submit a paper.',
+        });
+        return;
+    }
+    
     setIsSubmitting(true);
 
     try {
-      let fileUrl = paperId ? paperCache.getPaperById(paperId)?.fileUrl : '';
+      let fileUrl = isEditMode && paperId ? paperCache.getPaperById(paperId)?.fileUrl : '';
       
       const fileInput = values.file?.[0];
       if (fileInput) {
          toast({
             title: 'Uploading File...',
-            description: 'Please wait while your file is uploaded to Google Drive.',
+            description: 'Please wait while we upload your file to Google Drive.',
           });
         fileUrl = await uploadFile(fileInput); 
       }
       
-      const paperData = {
+      const paperData: Omit<QuestionPaper, 'id' | 'questions'> = {
           subject: values.subject,
           year: parseInt(values.year, 10),
           examType: values.examType as QuestionPaper['examType'],
@@ -111,7 +117,7 @@ function SubmitPaperFormComponent() {
           yearOfStudy: values.yearOfStudy as QuestionPaper['yearOfStudy'],
           semester: parseInt(values.semester, 10) as QuestionPaper['semester'],
           totalQuestions: parseInt(values.totalQuestions, 10),
-          fileUrl: fileUrl || 'https://www.africau.edu/images/default/sample.pdf', // Fallback URL
+          fileUrl: fileUrl || 'https://www.africau.edu/images/default/sample.pdf',
       };
 
       if (isEditMode && paperId) {
@@ -134,7 +140,7 @@ function SubmitPaperFormComponent() {
        toast({
         variant: 'destructive',
         title: 'Submission Failed',
-        description: 'Could not upload the paper. Please check the console for details.',
+        description: 'Could not upload the paper. Please check you are signed in and try again.',
       });
     } finally {
         setIsSubmitting(false);
@@ -143,7 +149,7 @@ function SubmitPaperFormComponent() {
 
   const PageIcon = isEditMode ? Replace : FileUp;
   const pageTitle = isEditMode ? 'Replace Paper' : 'Submit a Paper';
-  const pageDescription = isEditMode ? 'Help the community grow by sharing past question papers.';
+  const pageDescription = isEditMode ? 'Update an existing question paper with a new file or corrected details.' : 'Help the community grow by sharing past question papers.';
   const buttonText = isEditMode ? 'Replace Paper' : 'Submit Paper';
 
   return (
@@ -159,16 +165,9 @@ function SubmitPaperFormComponent() {
       </section>
 
       <Card className="max-w-3xl mx-auto shadow-lg">
-        <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-                <CardTitle>Paper Details</CardTitle>
-                <CardDescription>Fill in the details below to upload a new question paper.</CardDescription>
-            </div>
-            <Button asChild variant="outline">
-                <Link href="/api/auth/google">
-                    <Power className="mr-2 h-4 w-4" /> Connect Google Drive
-                </Link>
-            </Button>
+        <CardHeader>
+            <CardTitle>Paper Details</CardTitle>
+            <CardDescription>{isEditMode ? 'Edit the details and upload a new file if needed.' : 'Fill in the details below to upload a new question paper.'}</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -202,7 +201,7 @@ function SubmitPaperFormComponent() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <FormField
                   control={form.control}
                   name="year"
@@ -318,7 +317,7 @@ function SubmitPaperFormComponent() {
                 name="file"
                 render={({ field: { onChange, value, ...rest } }) => (
                   <FormItem>
-                    <FormLabel>Question Paper File {isEditMode && '(Optional)'}</FormLabel>
+                    <FormLabel>Question Paper File {isEditMode && '(Optional: only if you want to replace it)'}</FormLabel>
                     <FormControl>
                        <div className="relative">
                            <Upload className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -331,7 +330,7 @@ function SubmitPaperFormComponent() {
               />
 
               <div className="flex justify-end">
-                <Button type="submit" disabled={isSubmitting} size="lg" className="font-bold">
+                <Button type="submit" disabled={isSubmitting || !isAuthenticated} size="lg" className="font-bold">
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {buttonText}
                 </Button>

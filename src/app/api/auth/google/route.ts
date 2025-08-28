@@ -8,8 +8,9 @@ export async function GET() {
     !process.env.GOOGLE_CLIENT_SECRET ||
     !process.env.GOOGLE_REDIRECT_URI
   ) {
+    console.error('Google credentials are not set in the environment variables.');
     return NextResponse.json(
-      { error: 'Google credentials are not set in the environment variables.' },
+      { error: 'Google credentials are not set.' },
       { status: 500 }
     );
   }
@@ -20,10 +21,14 @@ export async function GET() {
     process.env.GOOGLE_REDIRECT_URI
   );
 
-  // Generate the url that will be used for the consent dialog.
   const authUrl = oauth2Client.generateAuthUrl({
-    access_type: 'offline', // 'offline' gets a refresh token
-    scope: ['https://www.googleapis.com/auth/drive.file'],
+    access_type: 'offline',
+    prompt: 'consent',
+    scope: [
+        'https://www.googleapis.com/auth/userinfo.profile',
+        'https://www.googleapis.com/auth/userinfo.email',
+        'https://www.googleapis.com/auth/drive.file'
+    ],
   });
 
   return NextResponse.redirect(authUrl);

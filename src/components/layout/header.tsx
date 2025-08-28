@@ -1,7 +1,9 @@
+
 'use client';
 
 import Link from 'next/link';
 import { BrainCircuit, LogOut, User, Menu } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -18,10 +20,10 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { mockUsers } from '@/lib/mock-data';
+
 
 export default function Header() {
-  const currentUser = mockUsers[0]; // Assume Anusha is logged in
+  const { user, isAuthenticated } = useAuth();
 
   const navLinks = [
     { href: '/dashboard', label: 'Dashboard' },
@@ -48,36 +50,42 @@ export default function Header() {
 
         <div className="flex items-center gap-4">
             <div className="hidden md:flex">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
-                      <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
+              {isAuthenticated && user ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={user.picture} alt={user.name} />
+                          <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56" align="end" forceMount>
+                      <DropdownMenuLabel className="font-normal">
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-medium leading-none">{user.name}</p>
+                           <p className="text-xs leading-none text-muted-foreground">
+                            {user.email}
+                          </p>
+                        </div>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem>
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Profile</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem>
+                        <LogOut className="mr-2 h-4 w-4" />
+                         <Link href="/api/auth/logout">Sign Out</Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+              ) : (
+                 <Button asChild>
+                    <Link href="/api/auth/google">Sign In</Link>
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{currentUser.name}</p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        Reputation: {currentUser.reputation}
-                      </p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <LogOut className="mr-2 h-4 w-4" />
-                     <Link href="/">Sign Out</Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              )}
             </div>
 
             <Sheet>
@@ -95,6 +103,17 @@ export default function Header() {
                             </Link>
                         ))}
                     </nav>
+                     <div className="mt-6">
+                        {isAuthenticated ? (
+                             <Button asChild className="w-full">
+                                <Link href="/api/auth/logout">Sign Out</Link>
+                             </Button>
+                        ) : (
+                             <Button asChild className="w-full">
+                                <Link href="/api/auth/google">Sign In</Link>
+                            </Button>
+                        )}
+                    </div>
                 </SheetContent>
             </Sheet>
         </div>
@@ -102,3 +121,4 @@ export default function Header() {
     </header>
   );
 }
+

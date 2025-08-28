@@ -2,6 +2,7 @@
 import { google } from 'googleapis';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { jwtDecode } from 'jwt-decode';
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
@@ -16,8 +17,9 @@ export async function GET(req: NextRequest) {
     !process.env.GOOGLE_CLIENT_SECRET ||
     !process.env.GOOGLE_REDIRECT_URI
   ) {
+    console.error('Google credentials are not set in the environment variables.');
     return NextResponse.json(
-      { error: 'Google credentials are not set in the environment variables.' },
+      { error: 'Google credentials are not set.' },
       { status: 500 }
     );
   }
@@ -31,9 +33,16 @@ export async function GET(req: NextRequest) {
 
     const { tokens } = await oauth2Client.getToken(code);
     
-    // In a real app, you would encrypt and store these tokens securely,
-    // likely associated with the logged-in user's ID in your database.
-    // For this demo, we'll store them in a secure, HTTP-only cookie.
+    if (tokens.id_token) {
+      const decoded: { name: string; email: string; picture: string } = jwtDecode(tokens.id_token);
+      const user = { name: decoded.name, email: decoded.email, picture: decoded.picture };
+      cookies().set('user_session', JSON.stringify(user), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 60 * 24, // 1 day
+      });
+    }
+
     if (tokens.access_token) {
         cookies().set('google_access_token', tokens.access_token, {
             httpOnly: true,
@@ -49,9 +58,7 @@ export async function GET(req: NextRequest) {
         });
     }
 
-
-    // Redirect user back to the submit page with a success indicator
-    return NextResponse.redirect(new URL('/submit-paper?authed=true', req.nextUrl.origin));
+    return NextResponse.redirect(new URL('/dashboard', req.nextUrl.origin));
 
   } catch (error) {
     console.error('Error exchanging authorization code for tokens', error);

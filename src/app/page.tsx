@@ -1,3 +1,4 @@
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -32,13 +33,13 @@ export default function SignInPage() {
             <div className="absolute -inset-2 rounded-lg bg-gradient-to-r from-primary to-accent opacity-75 blur"></div>
             <Card className="relative w-full max-w-sm">
               <CardHeader className="text-center">
-                <CardTitle className="font-headline text-2xl">Welcome Back!</CardTitle>
+                <CardTitle className="font-headline text-2xl">Welcome!</CardTitle>
                 <CardDescription>Sign in to continue your journey.</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col space-y-4">
                   <Button variant="outline" asChild>
-                    <Link href="/dashboard">
+                    <Link href="/api/auth/google">
                       <svg role="img" viewBox="0 0 24 24" className="mr-2 h-4 w-4">
                         <path
                           fill="currentColor"
