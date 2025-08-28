@@ -1,4 +1,3 @@
-'use server';
 
 import type { QuestionPaper } from './types';
 import { mockPapers } from './mock-data';
