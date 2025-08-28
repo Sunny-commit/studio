@@ -1,7 +1,9 @@
 
-import { notFound } from 'next/navigation';
+'use client';
+
+import { notFound, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { mockPapers, mockUsers } from '@/lib/mock-data';
+import { paperCache } from '@/lib/paper-cache';
 import type { Question } from '@/lib/types';
 import { SolutionCard } from '@/components/solution-card';
 import { AddSolutionForm } from '@/components/add-solution-form';
@@ -11,12 +13,26 @@ import { FileText, ChevronDown, CheckCircle2, Download, Bot, Replace } from 'luc
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
+import { useEffect, useState } from 'react';
+import { mockUsers } from '@/lib/mock-data';
 
 export default function PaperPage({ params }: { params: { paperId: string } }) {
-  const paper = mockPapers.find((p) => p.id === params.paperId);
+  const router = useRouter();
+  const [paper, setPaper] = useState(paperCache.getPaperById(params.paperId));
+
+  useEffect(() => {
+    // This effect can be used to re-fetch data if the cache is updated elsewhere
+    // For now, it just ensures we have the latest from the simple cache on mount
+    const currentPaper = paperCache.getPaperById(params.paperId);
+    if (!currentPaper) {
+      notFound();
+    } else {
+      setPaper(currentPaper);
+    }
+  }, [params.paperId]);
 
   if (!paper) {
-    notFound();
+    return <div>Loading paper...</div>; // Or a skeleton loader
   }
   
   const answeredQuestions = paper.questions.filter(q => q.solutions.length > 0).length;

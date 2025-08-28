@@ -1,16 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PaperSearch } from '@/components/paper-search';
 import { PaperCard } from '@/components/paper-card';
-import { mockPapers } from '@/lib/mock-data';
 import type { QuestionPaper } from '@/lib/types';
+import { paperCache } from '@/lib/paper-cache';
 
 export default function DashboardPage() {
-  const [filteredPapers, setFilteredPapers] = useState<QuestionPaper[]>(mockPapers);
+  const [allPapers, setAllPapers] = useState<QuestionPaper[]>([]);
+  const [filteredPapers, setFilteredPapers] = useState<QuestionPaper[]>([]);
+
+  useEffect(() => {
+    const papers = paperCache.getPapers();
+    setAllPapers(papers);
+    setFilteredPapers(papers);
+  }, []);
+
 
   const handleSearch = (filters: { branch: string; year: string; subject: string; yearOfStudy: string; semester: string; campus: string; examType: string; }) => {
-    let papers = mockPapers;
+    let papers = allPapers;
     if (filters.branch && filters.branch !== 'all') {
       papers = papers.filter(p => p.branch === filters.branch);
     }

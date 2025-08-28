@@ -14,7 +14,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Upload, Loader2, FileUp, Replace } from 'lucide-react';
-import { mockPapers } from '@/lib/mock-data';
+import { paperCache } from '@/lib/paper-cache';
+import { uploadFile } from '@/services/drive-service';
+import type { QuestionPaper } from '@/lib/types';
+
 
 const paperSchema = z.object({
   subject: z.string().min(3, { message: 'Subject must be at least 3 characters long.' }),
@@ -55,7 +58,7 @@ function SubmitPaperFormComponent() {
 
   useEffect(() => {
     if (paperId) {
-      const paperToEdit = mockPapers.find(p => p.id === paperId);
+      const paperToEdit = paperCache.getPaperById(paperId);
       if (paperToEdit) {
         setIsEditMode(true);
         form.reset({
@@ -73,33 +76,60 @@ function SubmitPaperFormComponent() {
     }
   }, [paperId, form]);
 
-  const onSubmit = (values: z.infer<typeof paperSchema>) => {
+  const onSubmit = async (values: z.infer<typeof paperSchema>) => {
     setIsSubmitting(true);
-    console.log("Submitting values:", values);
 
-    // Simulate API call to either create or update a paper
-    setTimeout(() => {
+    try {
+      let fileUrl = paperId ? paperCache.getPaperById(paperId)?.fileUrl : '';
+      
+      // If a new file is uploaded, handle the upload
+      const fileInput = values.file?.[0];
+      if (fileInput) {
+         toast({
+            title: 'Uploading File...',
+            description: 'Please wait while your file is uploaded. This is a placeholder for actual integration.',
+          });
+        // In a real app, the response from uploadFile would be a public URL
+        fileUrl = await uploadFile(fileInput); 
+      }
+      
+      const paperData = {
+          subject: values.subject,
+          year: parseInt(values.year, 10),
+          examType: values.examType as QuestionPaper['examType'],
+          branch: values.branch as QuestionPaper['branch'],
+          campus: values.campus as QuestionPaper['campus'],
+          yearOfStudy: values.yearOfStudy as QuestionPaper['yearOfStudy'],
+          semester: parseInt(values.semester, 10) as QuestionPaper['semester'],
+          totalQuestions: parseInt(values.totalQuestions, 10),
+          fileUrl: fileUrl || 'https://www.africau.edu/images/default/sample.pdf', // Fallback URL
+      };
+
       if (isEditMode && paperId) {
-        console.log(`Simulating update for paper ID: ${paperId}`);
-        // In a real app, you'd make an API call to update the database here.
-        // For this mock environment, we can't modify the imported `mockPapers` directly.
+        paperCache.updatePaper(paperId, paperData);
         toast({
           title: 'Paper Replaced!',
           description: 'The question paper has been successfully updated.',
         });
-        // We redirect back to the paper page. With a real backend, the new data would be fetched.
         router.push(`/papers/${paperId}`);
       } else {
-        console.log("Simulating creation of new paper");
+        paperCache.addPaper(paperData);
         toast({
           title: 'Paper Submitted!',
-          description: 'Thank you for your contribution. It will be reviewed shortly.',
+          description: 'Thank you for your contribution.',
         });
-        form.reset({ subject: '', totalQuestions: '', file: undefined });
         router.push('/dashboard');
       }
-      setIsSubmitting(false);
-    }, 1500);
+    } catch (error) {
+       console.error("Submission failed", error);
+       toast({
+        variant: 'destructive',
+        title: 'Submission Failed',
+        description: 'Could not upload the paper. Please try again.',
+      });
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
   const PageIcon = isEditMode ? Replace : FileUp;
@@ -305,5 +335,3 @@ export default function SubmitPaperPage() {
     </Suspense>
   );
 }
-
-    
