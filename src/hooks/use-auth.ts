@@ -31,6 +31,10 @@ export function useAuth() {
         // Clear potentially corrupted cookie
         Cookies.remove('user_session');
       }
+    } else {
+        // Explicitly set to not authenticated if cookie is not found
+        setIsAuthenticated(false);
+        setUser(null);
     }
     setIsLoading(false); // Finished checking
   }, []);
