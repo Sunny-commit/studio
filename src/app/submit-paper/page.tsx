@@ -31,7 +31,7 @@ const paperSchema = z.object({
   totalQuestions: z.string().min(1, {message: 'Please enter the total number of questions.'}).regex(/^\d+$/, { message: "Please enter a valid number."}),
   file: z.any().refine((files, ctx) => {
     // file is required only if it's not edit mode
-    const { isEditMode } = ctx.path;
+    const isEditMode = (ctx as any).path.includes('edit');
     return isEditMode || (files && files.length > 0);
   }, 'File is required.'),
 });
@@ -52,7 +52,7 @@ function SubmitPaperFormComponent() {
   const isEditMode = !!paperId;
   const { isAuthenticated } = useAuth();
   
-  const defaultValues = isEditMode 
+  const defaultValues = isEditMode && paperId 
     ? paperCache.getPaperById(paperId as string)
     : {};
 
@@ -74,15 +74,16 @@ function SubmitPaperFormComponent() {
   });
   
   useEffect(() => {
-    if (searchParams.has('authed')) {
+    const authed = searchParams.get('authed');
+    if (authed) {
         toast({
             title: 'Google Drive Connected!',
             description: 'You can now upload files directly to your drive.',
         });
-        // clean up the URL
-        router.replace('/submit-paper');
+        const cleanUrl = paperId ? `/submit-paper?paperId=${paperId}` : '/submit-paper';
+        router.replace(cleanUrl);
     }
-  }, [searchParams, toast, router]);
+  }, [searchParams, toast, router, paperId]);
 
   const onSubmit = async (values: z.infer<typeof paperSchema>) => {
     if (!isAuthenticated) {
@@ -97,7 +98,7 @@ function SubmitPaperFormComponent() {
     setIsSubmitting(true);
 
     try {
-      let fileUrl = isEditMode && paperId ? paperCache.getPaperById(paperId)?.fileUrl : '';
+      let fileUrl = (isEditMode && paperId) ? paperCache.getPaperById(paperId)?.fileUrl : '';
       
       const fileInput = values.file?.[0];
       if (fileInput) {
@@ -106,6 +107,14 @@ function SubmitPaperFormComponent() {
             description: 'Please wait while we upload your file to Google Drive.',
           });
         fileUrl = await uploadFile(fileInput); 
+      } else if (!isEditMode) {
+         toast({
+            variant: 'destructive',
+            title: 'File Required',
+            description: 'You must upload a question paper file.',
+          });
+         setIsSubmitting(false);
+         return;
       }
       
       const paperData: Omit<QuestionPaper, 'id' | 'questions'> = {
@@ -140,7 +149,7 @@ function SubmitPaperFormComponent() {
        toast({
         variant: 'destructive',
         title: 'Submission Failed',
-        description: 'Could not upload the paper. Please check you are signed in and try again.',
+        description: 'Could not upload the paper. Please ensure you are signed in and have connected Google Drive.',
       });
     } finally {
         setIsSubmitting(false);
@@ -170,173 +179,188 @@ function SubmitPaperFormComponent() {
             <CardDescription>{isEditMode ? 'Edit the details and upload a new file if needed.' : 'Fill in the details below to upload a new question paper.'}</CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="subject"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Subject</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Engineering Mathematics-II" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="totalQuestions"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Total Questions</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="e.g., 8" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <FormField
-                  control={form.control}
-                  name="year"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Academic Year</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger><SelectValue placeholder="Select year" /></SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="examType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Exam Type</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                         <FormControl>
-                          <SelectTrigger><SelectValue placeholder="Select exam type" /></SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                           {examTypes.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="branch"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Branch</FormLabel>
-                       <Select onValueChange={field.onChange} value={field.value}>
-                         <FormControl>
-                          <SelectTrigger><SelectValue placeholder="Select branch" /></SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                           {branches.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="campus"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Campus</FormLabel>
-                       <Select onValuechange={field.onChange} value={field.value}>
-                         <FormControl>
-                          <SelectTrigger><SelectValue placeholder="Select campus" /></SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                           {campuses.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="yearOfStudy"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Year of Study</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger><SelectValue placeholder="Select year of study" /></SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {yearsOfStudy.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="semester"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Semester</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                           <SelectTrigger><SelectValue placeholder="Select semester" /></SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {semesters.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-               <FormField
-                control={form.control}
-                name="file"
-                render={({ field: { onChange, value, ...rest } }) => (
-                  <FormItem>
-                    <FormLabel>Question Paper File {isEditMode && '(Optional: only if you want to replace it)'}</FormLabel>
-                    <FormControl>
-                       <div className="relative">
-                           <Upload className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                           <Input type="file" className="pl-9" accept="image/*,.pdf,.doc,.docx" onChange={(e) => onChange(e.target.files)} />
-                       </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="flex justify-end">
-                <Button type="submit" disabled={isSubmitting || !isAuthenticated} size="lg" className="font-bold">
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {buttonText}
+          {!isAuthenticated ? (
+             <div className="text-center py-12">
+                <h3 className="text-xl font-semibold mb-4">Please Sign In</h3>
+                <p className="text-muted-foreground mb-6">You need to be signed in to submit or replace papers.</p>
+                 <Button asChild>
+                    <Link href="/api/auth/google">Sign In with Google</Link>
                 </Button>
-              </div>
-            </form>
-          </Form>
+             </div>
+          ) : (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="subject"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Subject</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Engineering Mathematics-II" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                   <FormField
+                    control={form.control}
+                    name="totalQuestions"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Total Questions</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="e.g., 8" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="year"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Academic Year</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Select year" /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="examType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Exam Type</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                           <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Select exam type" /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                             {examTypes.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                   <FormField
+                    control={form.control}
+                    name="branch"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Branch</FormLabel>
+                         <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                           <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Select branch" /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                             {branches.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="campus"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Campus</FormLabel>
+                         <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                           <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Select campus" /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                             {campuses.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="yearOfStudy"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Year of Study</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Select year of study" /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {yearsOfStudy.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                   <FormField
+                    control={form.control}
+                    name="semester"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Semester</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                          <FormControl>
+                             <SelectTrigger><SelectValue placeholder="Select semester" /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {semesters.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                 <FormField
+                  control={form.control}
+                  name="file"
+                  render={({ field: { onChange, value, ...rest } }) => (
+                    <FormItem>
+                      <FormLabel>Question Paper File {isEditMode && '(Optional: only if you want to replace it)'}</FormLabel>
+                      <FormControl>
+                         <div className="relative">
+                             <Upload className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                             <Input type="file" className="pl-9" accept="image/*,.pdf,.doc,.docx" onChange={(e) => onChange(e.target.files)} />
+                         </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex justify-between items-center">
+                  <Button asChild variant="outline">
+                    <Link href={`/api/auth/google?redirect=${isEditMode ? `/submit-paper?paperId=${paperId}` : '/submit-paper'}`}>
+                        <Power className="mr-2 h-4 w-4"/> Connect Drive
+                    </Link>
+                  </Button>
+                  <Button type="submit" disabled={isSubmitting} size="lg" className="font-bold">
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {buttonText}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -350,3 +374,5 @@ export default function SubmitPaperPage() {
     </Suspense>
   );
 }
+
+    

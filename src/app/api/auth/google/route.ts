@@ -1,8 +1,8 @@
 
 import { google } from 'googleapis';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   if (
     !process.env.GOOGLE_CLIENT_ID ||
     !process.env.GOOGLE_CLIENT_SECRET ||
@@ -14,6 +14,8 @@ export async function GET() {
       { status: 500 }
     );
   }
+
+  const redirect = req.nextUrl.searchParams.get('redirect') || '/dashboard';
 
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
@@ -29,7 +31,10 @@ export async function GET() {
         'https://www.googleapis.com/auth/userinfo.email',
         'https://www.googleapis.com/auth/drive.file'
     ],
+    state: encodeURIComponent(redirect),
   });
 
   return NextResponse.redirect(authUrl);
 }
+
+    

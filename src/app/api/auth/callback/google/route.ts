@@ -7,6 +7,9 @@ import { jwtDecode } from 'jwt-decode';
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const code = url.searchParams.get('code');
+  const state = url.searchParams.get('state');
+  const redirectUri = state ? decodeURIComponent(state) : '/dashboard';
+
 
   if (!code) {
     return NextResponse.json({ error: 'Missing authorization code' }, { status: 400 });
@@ -40,6 +43,7 @@ export async function GET(req: NextRequest) {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         maxAge: 60 * 60 * 24, // 1 day
+        path: '/',
       });
     }
 
@@ -48,6 +52,7 @@ export async function GET(req: NextRequest) {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             maxAge: tokens.expiry_date ? (tokens.expiry_date - Date.now()) / 1000 : 3600,
+            path: '/',
         });
     }
      if (tokens.refresh_token) {
@@ -55,13 +60,22 @@ export async function GET(req: NextRequest) {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             maxAge: 30 * 24 * 60 * 60, // 30 days
+            path: '/',
         });
     }
 
-    return NextResponse.redirect(new URL('/dashboard', req.nextUrl.origin));
+    const finalRedirectUrl = new URL(redirectUri, req.nextUrl.origin);
+    // Add a query param to indicate successful authentication for the toast message
+    if (redirectUri.includes('submit-paper')) {
+        finalRedirectUrl.searchParams.set('authed', 'true');
+    }
+
+    return NextResponse.redirect(finalRedirectUrl);
 
   } catch (error) {
     console.error('Error exchanging authorization code for tokens', error);
-    return NextResponse.json({ error: 'Failed to authenticate with Google' }, { status: 500 });
+    return NextResponse.redirect(new URL('/?error=auth_failed', req.nextUrl.origin));
   }
 }
+
+    
