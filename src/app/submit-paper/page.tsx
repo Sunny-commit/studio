@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, Loader2, FileUp, Replace } from 'lucide-react';
+import { Upload, Loader2, FileUp, Replace, Power } from 'lucide-react';
 import { paperCache } from '@/lib/paper-cache';
 import { uploadFile } from '@/services/drive-service';
 import type { QuestionPaper } from '@/lib/types';
@@ -55,6 +56,16 @@ function SubmitPaperFormComponent() {
       totalQuestions: '',
     }
   });
+  
+  useEffect(() => {
+    // Show a toast if the user was just redirected from Google auth
+    if (searchParams.has('authed')) {
+        toast({
+            title: 'Google Drive Connected!',
+            description: 'You can now upload files directly to your drive.',
+        });
+    }
+  }, [searchParams, toast]);
 
   useEffect(() => {
     if (paperId) {
@@ -132,7 +143,7 @@ function SubmitPaperFormComponent() {
 
   const PageIcon = isEditMode ? Replace : FileUp;
   const pageTitle = isEditMode ? 'Replace Paper' : 'Submit a Paper';
-  const pageDescription = isEditMode ? 'Upload a new file and update the details for this question paper.' : 'Help the community grow by sharing past question papers.';
+  const pageDescription = isEditMode ? 'Help the community grow by sharing past question papers.';
   const buttonText = isEditMode ? 'Replace Paper' : 'Submit Paper';
 
   return (
@@ -148,9 +159,16 @@ function SubmitPaperFormComponent() {
       </section>
 
       <Card className="max-w-3xl mx-auto shadow-lg">
-        <CardHeader>
-          <CardTitle>Paper Details</CardTitle>
-          <CardDescription>Fill in the details below to upload a new question paper.</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+                <CardTitle>Paper Details</CardTitle>
+                <CardDescription>Fill in the details below to upload a new question paper.</CardDescription>
+            </div>
+            <Button asChild variant="outline">
+                <Link href="/api/auth/google">
+                    <Power className="mr-2 h-4 w-4" /> Connect Google Drive
+                </Link>
+            </Button>
         </CardHeader>
         <CardContent>
           <Form {...form}>

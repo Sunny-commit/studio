@@ -1,74 +1,87 @@
+
 // This file uses server-side code.
 'use server';
 
 import { google } from 'googleapis';
 import { Readable } from 'stream';
-
-/**
- * NOTE: This service is a placeholder for a real Google Drive integration.
- * It requires you to set up OAuth 2.0 credentials in your Google Cloud Console
- * and add them to your .env file. The full user authentication flow is NOT
- * implemented here and needs to be added.
- */
+import { cookies } from 'next/headers';
+import type { drive_v3 } from 'googleapis';
 
 async function getAuthenticatedClient() {
-  // This is a placeholder. In a real app, you would implement the full OAuth 2.0 flow
-  // to get the user's consent and an access token.
-  // For server-to-server interaction (e.g., uploading to a single service account drive),
-  // you would use a service account key file.
+  const accessToken = cookies().get('google_access_token')?.value;
+  const refreshToken = cookies().get('google_refresh_token')?.value;
+
+  if (!accessToken || !refreshToken) {
+    console.warn("Google Drive tokens not found in cookies. User needs to authenticate.");
+    // In a real app, you might throw an error that triggers a re-authentication flow.
+    return null;
+  }
   
-  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-      console.warn("Google Drive credentials are not set in .env file. Using placeholder logic.");
-      return null;
+  if (
+    !process.env.GOOGLE_CLIENT_ID || 
+    !process.env.GOOGLE_CLIENT_SECRET ||
+    !process.env.GOOGLE_REDIRECT_URI
+    ) {
+      console.error("Google Drive credentials are not set in .env file.");
+      // This is a server configuration error, so we should stop.
+      throw new Error("Server is not configured for Google Drive integration.");
   }
 
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI // e.g., http://localhost:9002/api/auth/callback/google
+    process.env.GOOGLE_REDIRECT_URI
   );
   
-  // In a real flow, you would redirect the user to an authUrl:
-  // const authUrl = oauth2Client.generateAuthUrl({ access_type: 'offline', scope: ['https://www.googleapis.com/auth/drive.file'] });
-  // After user grants permission, Google redirects to your REDIRECT_URI with a code.
-  // You would then exchange the code for tokens:
-  // const { tokens } = await oauth2Cient.getToken(code);
-  // oauth2Client.setCredentials(tokens);
+  oauth2Client.setCredentials({
+    access_token: accessToken,
+    refresh_token: refreshToken,
+  });
 
-  // For this placeholder, we can't get user tokens, so we'll return the configured client.
+  // The access token might be expired. The googleapis library can handle refreshing it automatically
+  // if it has a refresh token. It will emit a 'tokens' event when it does.
+  // We can listen for that event to update our stored tokens.
+  oauth2Client.on('tokens', (tokens) => {
+    if (tokens.access_token) {
+       cookies().set('google_access_token', tokens.access_token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: tokens.expiry_date ? (tokens.expiry_date - Date.now()) / 1000 : 3600,
+        });
+    }
+  });
+
   return oauth2Client;
 }
 
 
 /**
  * Uploads a file to Google Drive.
- * THIS IS A PLACEHOLDER and does not actually upload to Google Drive without a full auth flow.
  * @param file The file to upload.
- * @returns A mock public URL for the file.
+ * @returns The web link to view the file.
  */
 export async function uploadFile(file: File): Promise<string> {
   console.log(`[Drive Service] Attempting to upload file: ${file.name}`);
   const auth = await getAuthenticatedClient();
 
   if (!auth) {
+    // This is a fallback for when the user is not authenticated.
+    // In a real application, you might prevent the upload entirely or prompt for authentication.
     console.log("[Drive Service] No auth, using mock upload.");
     await new Promise(resolve => setTimeout(resolve, 1000));
-    // This is a sample PDF URL.
     return 'https://www.africau.edu/images/default/sample.pdf';
   }
   
-  // The rest of this function will only execute if credentials are set, but it
-  // will still fail without a user's access token from a real OAuth flow.
   try {
     const drive = google.drive({ version: 'v3', auth });
 
-    const fileMetadata = {
+    const fileMetadata: drive_v3.Params$Resource$Files$Create['requestBody'] = {
       name: file.name,
-      // To upload to a specific folder, add its ID here:
-      // parents: ['YOUR_FOLDER_ID'] 
+      // You can specify a folder to upload to by its ID.
+      // parents: ['YOUR_FOLDER_ID']
     };
     
-    const media = {
+    const media: drive_v3.Params$Resource$Files$Create['media'] = {
       mimeType: file.type,
       body: Readable.from(Buffer.from(await file.arrayBuffer())),
     };
@@ -84,7 +97,7 @@ export async function uploadFile(file: File): Promise<string> {
         throw new Error('File upload succeeded but no ID or view link was returned.');
     }
     
-    // Make the file publicly readable
+    // Make the file publicly readable within the organization or to anyone with the link
     await drive.permissions.create({
       fileId: fileId,
       requestBody: {
@@ -93,12 +106,13 @@ export async function uploadFile(file: File): Promise<string> {
       },
     });
 
-    // Return a direct download link if possible, or the view link
-    return `https://docs.google.com/uc?id=${fileId}&export=download`;
+    console.log(`[Drive Service] Successfully uploaded file. View link: ${response.data.webViewLink}`);
+    // Returning the webViewLink is generally safer and more flexible than a direct download link.
+    return response.data.webViewLink;
 
-  } catch (error) {
-    console.error('Failed to upload file to Google Drive. Check authentication flow.', error);
+  } catch (error: any) {
+    console.error('Failed to upload file to Google Drive.', error.message);
     // Fallback to a mock URL on failure
-    return 'https://www.africau.edu/images/default/sample.pdf';
+    throw new Error('Failed to upload to Google Drive. Please ensure you are authenticated and have permissions.');
   }
 }
