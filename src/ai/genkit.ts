@@ -12,7 +12,7 @@ export const ai = genkit({
       // We are telling Genkit to create the API route for us.
       // The API route will be created at src/app/api/flows/[slug]/route.ts
       // in this case.
-      api: '/api/flows/[slug]',
+      api: '/api/flows/[slug]/route',
     }),
   ],
   // Log errors to the console.
