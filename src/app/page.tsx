@@ -2,13 +2,13 @@
 'use client';
 
 import Link from 'next/link';
-import { BrainCircuit } from 'lucide-react';
+import { BrainCircuit, LogIn } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function LandingPage() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -20,21 +20,24 @@ export default function LandingPage() {
     }
   }, [isAuthenticated, isLoading, router]);
 
-  if (isLoading || (!isLoading && isAuthenticated)) {
+  if (isLoading || isAuthenticated) {
     return (
       <div className="flex min-h-screen w-full items-center justify-center">
-        <div>Loading...</div>
+        <div className="flex flex-col items-center gap-4">
+          <BrainCircuit className="h-12 w-12 text-primary animate-pulse" />
+          <p className="text-muted-foreground">Loading your experience...</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="flex min-h-[calc(100vh-10rem)] w-full items-center justify-center p-4">
-      <div className="grid grid-cols-1 gap-16 lg:grid-cols-2 items-center">
+      <div className="container mx-auto grid grid-cols-1 gap-16 lg:grid-cols-2 items-center">
         <div className="flex flex-col justify-center space-y-6">
           <div className="flex items-center gap-3">
             <BrainCircuit className="h-10 w-10 text-primary" />
-            <h1 className="font-headline text-4xl font-bold tracking-tighter">
+            <h1 className="font-headline text-4xl font-bold tracking-tighter sm:text-5xl">
               SolveAI
             </h1>
           </div>
@@ -43,7 +46,7 @@ export default function LandingPage() {
           </p>
            <div className="flex gap-4">
             <Button asChild size="lg" className="font-bold">
-              <Link href="/api/auth/google">Get Started</Link>
+              <Link href="/api/auth/google?redirect=/dashboard">Get Started</Link>
             </Button>
           </div>
         </div>
@@ -58,7 +61,7 @@ export default function LandingPage() {
               <CardContent>
                 <div className="flex flex-col space-y-4">
                   <Button variant="outline" asChild>
-                    <Link href="/api/auth/google">
+                    <Link href="/api/auth/google?redirect=/dashboard">
                       <svg role="img" viewBox="0 0 24 24" className="mr-2 h-4 w-4">
                         <path
                           fill="currentColor"

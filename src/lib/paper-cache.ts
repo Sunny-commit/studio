@@ -1,6 +1,6 @@
 
-import type { QuestionPaper } from './types';
-import { mockPapers } from './mock-data';
+import type { Question, QuestionPaper, Solution, User } from './types';
+import { mockPapers, mockUsers } from './mock-data';
 
 /**
  * THIS IS A TEMPORARY IN-MEMORY CACHE.
@@ -34,14 +34,14 @@ class PaperCache {
   public addPaper(paper: Omit<QuestionPaper, 'id' | 'questions'>): QuestionPaper {
     const newPaper: QuestionPaper = {
         ...paper,
-        id: `paper${this.papers.length + 1}`, // simple id generation
+        id: `paper${this.papers.length + 1}${Date.now()}`, // simple id generation
         questions: [], // New papers don't have questions yet
     };
     this.papers.unshift(newPaper); // Add to the beginning of the list
     return newPaper;
   }
   
-  public updatePaper(id: string, updatedData: Partial<Omit<QuestionPaper, 'id' | 'questions'>>): QuestionPaper | null {
+  public updatePaper(id: string, updatedData: Partial<Omit<QuestionPaper, 'id' | 'questions' | 'fileUrl'>> & { fileUrl?: string }): QuestionPaper | null {
     const paperIndex = this.papers.findIndex((p) => p.id === id);
     if (paperIndex === -1) {
       return null;
@@ -57,6 +57,25 @@ class PaperCache {
 
     this.papers[paperIndex] = updatedPaper;
     return updatedPaper;
+  }
+
+  public addSolution(paperId: string, questionId: string, solutionData: Omit<Solution, 'id' | 'timestamp' | 'author' | 'upvotes'>, author: User): Solution | null {
+    const paper = this.getPaperById(paperId);
+    if (!paper) return null;
+
+    const question = paper.questions.find(q => q.id === questionId);
+    if (!question) return null;
+
+    const newSolution: Solution = {
+      ...solutionData,
+      id: `sol${Date.now()}`,
+      timestamp: 'Just now',
+      author,
+      upvotes: 0
+    };
+
+    question.solutions.push(newSolution);
+    return newSolution;
   }
 }
 

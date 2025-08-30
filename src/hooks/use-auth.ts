@@ -3,16 +3,11 @@
 
 import { useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
-
-interface User {
-  name: string;
-  email: string;
-  picture: string;
-}
+import type { AuthenticatedUser } from '@/lib/types';
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<AuthenticatedUser | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -20,14 +15,15 @@ export function useAuth() {
     
     if (userCookie) {
       try {
-        const parsedUser = JSON.parse(userCookie);
+        const parsedUser: AuthenticatedUser = JSON.parse(userCookie);
         setUser(parsedUser);
         setIsAuthenticated(true);
       } catch (error) {
         console.error("Failed to parse user cookie:", error);
+        // Clear broken cookie
+        Cookies.remove('user_session');
         setIsAuthenticated(false);
         setUser(null);
-        Cookies.remove('user_session');
       }
     } else {
         setIsAuthenticated(false);

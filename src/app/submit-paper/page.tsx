@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, Loader2, FileUp, Replace, Power } from 'lucide-react';
+import { Upload, Loader2, FileUp, Replace, Power, LogIn } from 'lucide-react';
 import { paperCache } from '@/lib/paper-cache';
 import { uploadFile } from '@/services/drive-service';
 import type { QuestionPaper } from '@/lib/types';
@@ -30,13 +30,11 @@ const paperSchema = z.object({
   semester: z.string({ required_error: 'Please select a semester.' }),
   totalQuestions: z.string().min(1, {message: 'Please enter the total number of questions.'}).regex(/^\d+$/, { message: "Please enter a valid number."}),
   file: z.any().refine((files) => {
-    const searchParams = new URLSearchParams(window.location.search);
+    const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
     const isEditMode = !!searchParams.get('paperId');
-    // File is not required in edit mode, but if it is provided, it must have a length > 0
     if (isEditMode) {
-      return true;
+      return true; // File is not required in edit mode unless provided
     }
-    // In create mode, file is required
     return files && files.length > 0;
   }, 'File is required.'),
 });
@@ -55,7 +53,7 @@ function SubmitPaperFormComponent() {
   const router = useRouter();
   const paperId = searchParams.get('paperId');
   const isEditMode = !!paperId;
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   
   const existingPaper = isEditMode ? paperCache.getPaperById(paperId) : null;
 
@@ -93,6 +91,16 @@ function SubmitPaperFormComponent() {
     }
   }, [isEditMode, existingPaper, toast, router]);
 
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+        toast({
+            variant: 'destructive',
+            title: 'Authentication Required',
+            description: 'Please sign in to submit a paper.',
+        });
+    }
+  }, [isLoading, isAuthenticated, toast]);
+
   const onSubmit = async (values: z.infer<typeof paperSchema>) => {
     if (!isAuthenticated) {
         toast({
@@ -112,7 +120,7 @@ function SubmitPaperFormComponent() {
       if (fileInput) {
          toast({
             title: 'Uploading File...',
-            description: 'Please wait while we upload your file to Google Drive.',
+            description: 'Please wait while we upload your file to Google Drive. This may take a moment.',
           });
         fileUrl = await uploadFile(fileInput); 
       } else if (!isEditMode) {
@@ -157,7 +165,7 @@ function SubmitPaperFormComponent() {
        toast({
         variant: 'destructive',
         title: 'Submission Failed',
-        description: 'Could not upload the paper. Please ensure you are signed in and have connected Google Drive.',
+        description: 'Could not upload the paper. Please check your connection or try connecting Google Drive again.',
       });
     } finally {
         setIsSubmitting(false);
@@ -168,6 +176,7 @@ function SubmitPaperFormComponent() {
   const pageTitle = isEditMode ? 'Replace Paper' : 'Submit a Paper';
   const pageDescription = isEditMode ? 'Update an existing question paper with a new file or corrected details.' : 'Help the community grow by sharing past question papers.';
   const buttonText = isEditMode ? 'Replace Paper' : 'Submit Paper';
+  const redirectPath = `/submit-paper${paperId ? `?paperId=${paperId}` : ''}`;
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8">
@@ -187,12 +196,17 @@ function SubmitPaperFormComponent() {
             <CardDescription>{isEditMode ? 'Edit the details and upload a new file if needed.' : 'Fill in the details below to upload a new question paper.'}</CardDescription>
         </CardHeader>
         <CardContent>
-          {!isAuthenticated ? (
+          {isLoading ? (
+             <div className="text-center py-12"><Loader2 className="mx-auto h-8 w-8 animate-spin" /></div>
+          ) : !isAuthenticated ? (
              <div className="text-center py-12">
                 <h3 className="text-xl font-semibold mb-4">Please Sign In</h3>
                 <p className="text-muted-foreground mb-6">You need to be signed in to submit or replace papers.</p>
                  <Button asChild>
-                    <Link href={`/api/auth/google?redirect=/submit-paper`}>Sign In with Google</Link>
+                    <Link href={`/api/auth/google?redirect=${redirectPath}`}>
+                        <LogIn className="mr-2 h-4 w-4" />
+                        Sign In with Google
+                    </Link>
                 </Button>
              </div>
           ) : (
@@ -347,7 +361,7 @@ function SubmitPaperFormComponent() {
                       <FormControl>
                          <div className="relative">
                              <Upload className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                             <Input type="file" className="pl-9" accept="image/*,.pdf,.doc,.docx" onChange={(e) => onChange(e.target.files)} />
+                             <Input type="file" className="pl-9" accept="application/pdf,image/*" onChange={(e) => onChange(e.target.files)} />
                          </div>
                       </FormControl>
                       <FormMessage />
@@ -357,7 +371,7 @@ function SubmitPaperFormComponent() {
 
                 <div className="flex justify-between items-center pt-2">
                    <Button type="button" variant="outline" asChild>
-                     <Link href={`/api/auth/google?redirect=/submit-paper${paperId ? `?paperId=${paperId}` : ''}`}>
+                     <Link href={`/api/auth/google?redirect=${redirectPath}&authed=true`}>
                        <Power className="mr-2 h-4 w-4" />
                        Connect Drive
                      </Link>

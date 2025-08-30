@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -15,22 +16,27 @@ import { Bot, Upload, Loader2, Sparkles } from 'lucide-react';
 import type { Question, User } from '@/lib/types';
 import { reviewSolution, type ReviewSolutionOutput } from '@/ai/flows/review-solution';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from './ui/alert-dialog';
+import { paperCache } from '@/lib/paper-cache';
+import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
 
 const solutionSchema = z.object({
   solutionText: z.string().optional(),
-  solutionImage: z.any().optional(),
-}).refine(data => data.solutionText || data.solutionImage, {
+  solutionImageFile: z.any().optional(),
+}).refine(data => data.solutionText || (data.solutionImageFile && data.solutionImageFile.length > 0), {
   message: 'Please provide either text or an image for your solution.',
   path: ['solutionText'],
 });
 
 interface AddSolutionFormProps {
   question: Question;
-  currentUser: User;
+  paperId: string;
+  onSolutionAdded: () => void;
 }
 
-export function AddSolutionForm({ question }: AddSolutionFormProps) {
+export function AddSolutionForm({ question, paperId, onSolutionAdded }: AddSolutionFormProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isReviewing, setIsReviewing] = useState(false);
   const [reviewResult, setReviewResult] = useState<ReviewSolutionOutput | null>(null);
@@ -38,20 +44,55 @@ export function AddSolutionForm({ question }: AddSolutionFormProps) {
 
   const form = useForm<z.infer<typeof solutionSchema>>({
     resolver: zodResolver(solutionSchema),
+    defaultValues: {
+      solutionText: '',
+      solutionImageFile: undefined,
+    }
   });
 
-  const onSubmit = (values: z.infer<typeof solutionSchema>) => {
+  const onSubmit = async (values: z.infer<typeof solutionSchema>) => {
+    if (!user) {
+      toast({ variant: 'destructive', title: 'Not Signed In', description: 'You must be signed in to add a solution.' });
+      return;
+    }
     setIsSubmitting(true);
-    console.log(values);
-    // Simulate API call
-    setTimeout(() => {
+    
+    try {
+      let content = '';
+      let contentType: 'text' | 'image' = 'text';
+
+      if (values.solutionImageFile && values.solutionImageFile.length > 0) {
+        contentType = 'image';
+        // In a real app, you would upload this file and get a URL
+        content = URL.createObjectURL(values.solutionImageFile[0]);
+        toast({ title: 'Image Uploading...', description: 'Your image is being prepared.' });
+      } else {
+        contentType = 'text';
+        content = values.solutionText || '';
+      }
+
+      const mockAuthor: User = {
+        id: user.id || 'u_current',
+        name: user.name,
+        avatarUrl: user.picture,
+        reputation: 0, // Current user's reputation isn't tracked client-side
+      };
+
+      paperCache.addSolution(paperId, question.id, { content, content_type: contentType }, mockAuthor);
+      
       toast({
         title: 'Solution Submitted!',
         description: 'Thank you for your contribution.',
       });
-      form.reset({ solutionText: '', solutionImage: undefined });
+      
+      form.reset({ solutionText: '', solutionImageFile: undefined });
+      onSolutionAdded(); // Notify parent to re-render
+    } catch (error) {
+      console.error("Failed to add solution", error);
+      toast({ variant: 'destructive', title: 'Submission Failed', description: 'Could not add your solution.' });
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
   
   const handleAiReview = async () => {
@@ -96,7 +137,7 @@ export function AddSolutionForm({ question }: AddSolutionFormProps) {
               <FormItem>
                  <FormLabel>Type your solution</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Supports basic formatting and LaTeX..." {...field} />
+                  <Textarea placeholder="Explain your answer here..." {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -109,14 +150,14 @@ export function AddSolutionForm({ question }: AddSolutionFormProps) {
           </div>
           <FormField
             control={form.control}
-            name="solutionImage"
-            render={({ field }) => (
+            name="solutionImageFile"
+            render={({ field: { onChange, value, ...rest } }) => (
               <FormItem>
-                <FormLabel>Upload an image</FormLabel>
+                <FormLabel>Upload an image of your solution</FormLabel>
                  <FormControl>
                     <div className="relative">
                         <Upload className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input type="file" className="pl-9" accept="image/*,.pdf" onChange={(e) => field.onChange(e.target.files)} />
+                        <Input type="file" className="pl-9" accept="image/*" onChange={(e) => onChange(e.target.files)} />
                     </div>
                 </FormControl>
                 <FormMessage />
@@ -151,11 +192,15 @@ export function AddSolutionForm({ question }: AddSolutionFormProps) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="max-h-60 overflow-y-auto pr-2">
-            <ul className="space-y-3 list-disc list-inside text-sm">
-              {reviewResult?.suggestions.map((suggestion, index) => (
-                <li key={index}>{suggestion}</li>
-              ))}
-            </ul>
+             {reviewResult?.suggestions?.length ? (
+                <ul className="space-y-3 list-disc list-inside text-sm">
+                {reviewResult.suggestions.map((suggestion, index) => (
+                    <li key={index}>{suggestion}</li>
+                ))}
+                </ul>
+             ): (
+                <p className="text-sm text-muted-foreground">The AI didn't have any specific suggestions. Your solution looks good!</p>
+             )}
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Close</AlertDialogCancel>

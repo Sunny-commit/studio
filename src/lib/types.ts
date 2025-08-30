@@ -1,8 +1,16 @@
+
 export interface User {
   id: string;
   name: string;
   avatarUrl: string;
   reputation: number;
+}
+
+export interface AuthenticatedUser {
+  id?: string;
+  name: string;
+  email: string;
+  picture: string;
 }
 
 export interface Solution {

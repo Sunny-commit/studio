@@ -9,34 +9,64 @@ import { SolutionCard } from '@/components/solution-card';
 import { AddSolutionForm } from '@/components/add-solution-form';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { FileText, ChevronDown, CheckCircle2, Download, Bot, Replace } from 'lucide-react';
+import { FileText, ChevronDown, CheckCircle2, Download, Bot, Replace, BrainCircuit, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { useEffect, useState } from 'react';
-import { mockUsers } from '@/lib/mock-data';
+import { useEffect, useState, useCallback } from 'react';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function PaperPage({ params }: { params: { paperId: string } }) {
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
-  const [paper, setPaper] = useState(paperCache.getPaperById(params.paperId));
+  const [paper, setPaper] = useState(() => paperCache.getPaperById(params.paperId));
 
-  useEffect(() => {
-    // This effect can be used to re-fetch data if the cache is updated elsewhere
-    // For now, it just ensures we have the latest from the simple cache on mount
+  const refreshPaper = useCallback(() => {
     const currentPaper = paperCache.getPaperById(params.paperId);
     if (!currentPaper) {
       notFound();
     } else {
-      setPaper(currentPaper);
+      setPaper(JSON.parse(JSON.stringify(currentPaper)));
     }
   }, [params.paperId]);
 
+  useEffect(() => {
+    refreshPaper();
+  }, [params.paperId, refreshPaper]);
+  
+  // This is a simple way to force a re-render when a solution is added.
+  const handleSolutionAdded = () => {
+    refreshPaper();
+  };
+  
+  if (isLoading) {
+    return (
+       <div className="flex min-h-[calc(100vh-8rem)] w-full items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <BrainCircuit className="h-12 w-12 text-primary animate-pulse" />
+          <p className="text-muted-foreground">Loading Paper...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!paper) {
-    return <div>Loading paper...</div>; // Or a skeleton loader
+    return (
+       <div className="container mx-auto max-w-6xl py-8 px-4 text-center">
+         <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
+         <h1 className="mt-4 font-headline text-3xl font-bold">Paper Not Found</h1>
+         <p className="mt-2 text-muted-foreground">The paper you are looking for does not exist.</p>
+         <Button asChild className="mt-6">
+           <Link href="/dashboard">Back to Dashboard</Link>
+         </Button>
+       </div>
+    );
   }
   
   const answeredQuestions = paper.questions.filter(q => q.solutions.length > 0).length;
   const progressPercentage = paper.totalQuestions > 0 ? (answeredQuestions / paper.totalQuestions) * 100 : 0;
+  // Replace the iframe src to work with Google Drive's preview URL format
+  const previewUrl = paper.fileUrl.replace('/view', '/preview');
 
   return (
     <div className="container mx-auto max-w-6xl py-8 px-4">
@@ -58,23 +88,25 @@ export default function PaperPage({ params }: { params: { paperId: string } }) {
                   <CardTitle className="flex items-center"><FileText className="mr-3 h-6 w-6 text-primary"/> Question Paper</CardTitle>
                   <div className="flex items-center gap-2">
                     <Button asChild>
-                      <a href={paper.fileUrl} download>
+                      <a href={paper.fileUrl} download target="_blank" rel="noopener noreferrer">
                         <Download className="mr-2 h-4 w-4" />
                         Download
                       </a>
                     </Button>
-                    <Button asChild variant="outline">
-                      <Link href={`/submit-paper?paperId=${paper.id}`}>
-                        <Replace className="mr-2 h-4 w-4" />
-                        Replace
-                      </Link>
-                    </Button>
+                    {isAuthenticated && (
+                       <Button asChild variant="outline">
+                        <Link href={`/submit-paper?paperId=${paper.id}`}>
+                          <Replace className="mr-2 h-4 w-4" />
+                          Replace
+                        </Link>
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="aspect-[8.5/11] w-full overflow-hidden rounded-md border">
-                   <iframe src={paper.fileUrl} className="h-full w-full" title={`${paper.subject} ${paper.year} Paper`} />
+                <div className="aspect-[8.5/11] w-full overflow-hidden rounded-md border bg-muted">
+                   <iframe src={previewUrl} className="h-full w-full" title={`${paper.subject} ${paper.year} Paper`} />
                 </div>
               </CardContent>
             </Card>
@@ -115,13 +147,13 @@ export default function PaperPage({ params }: { params: { paperId: string } }) {
 
           <h2 className="font-headline text-2xl font-semibold">Questions & Solutions</h2>
           {paper.questions.length > 0 ? (
-            <Accordion type="single" collapsible className="w-full space-y-4">
+            <Accordion type="single" collapsible className="w-full space-y-4" defaultValue={paper.questions[0].id}>
               {paper.questions.map((question: Question) => (
                 <AccordionItem value={question.id} key={question.id} className="border-b-0">
                   <Card className="overflow-hidden">
                     <AccordionTrigger className="w-full p-4 text-left font-semibold hover:no-underline data-[state=open]:bg-muted/50">
                        <div className="flex items-center justify-between w-full">
-                         <span>{question.questionNumber}: {question.text}</span>
+                         <span className="flex-1 text-left pr-2">{question.questionNumber}: {question.text}</span>
                          <ChevronDown className="h-5 w-5 shrink-0 transition-transform duration-200" />
                        </div>
                     </AccordionTrigger>
@@ -129,7 +161,7 @@ export default function PaperPage({ params }: { params: { paperId: string } }) {
                       <div className="border-t -mx-4 mb-4"></div>
                       {question.solutions.length > 0 ? (
                         <div className="space-y-6">
-                           <h3 className="font-semibold text-lg mb-2">Community Solutions</h3>
+                           <h3 className="font-semibold text-lg mb-2">Community Solutions ({question.solutions.length})</h3>
                           {question.solutions
                             .sort((a, b) => b.upvotes - a.upvotes)
                             .map((solution) => (
@@ -139,10 +171,19 @@ export default function PaperPage({ params }: { params: { paperId: string } }) {
                       ) : (
                         <p className="text-center text-sm text-muted-foreground py-4">No solutions yet. Be the first to add one!</p>
                       )}
-                      <div className="mt-6 border-t pt-6">
-                         <h4 className="font-semibold text-lg mb-4">Add Your Solution</h4>
-                         <AddSolutionForm question={question} currentUser={mockUsers[0]} />
-                      </div>
+                      {isAuthenticated ? (
+                         <div className="mt-6 border-t pt-6">
+                           <h4 className="font-semibold text-lg mb-4">Add Your Solution</h4>
+                           <AddSolutionForm question={question} paperId={paper.id} onSolutionAdded={handleSolutionAdded} />
+                        </div>
+                      ) : (
+                        <div className="mt-6 border-t pt-6 text-center">
+                            <p className="text-muted-foreground">You must be signed in to add a solution.</p>
+                            <Button asChild variant="link">
+                                <Link href="/api/auth/google?redirect=/papers/${paper.id}">Sign In</Link>
+                            </Button>
+                        </div>
+                      )}
                     </AccordionContent>
                    </Card>
                 </AccordionItem>
