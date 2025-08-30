@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,26 +5,14 @@ import { PaperSearch } from '@/components/paper-search';
 import { PaperCard } from '@/components/paper-card';
 import type { QuestionPaper } from '@/lib/types';
 import { paperCache } from '@/lib/paper-cache';
-import { useAuth } from '@/hooks/use-auth';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { BrainCircuit } from 'lucide-react';
 
 export default function DashboardPage() {
   const [allPapers, setAllPapers] = useState<QuestionPaper[]>([]);
   const [filteredPapers, setFilteredPapers] = useState<QuestionPaper[]>([]);
-  const { isAuthenticated, isLoading } = useAuth();
-  const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push('/');
-    }
-  }, [isAuthenticated, isLoading, router]);
-
-  useEffect(() => {
-    // This now correctly reads from the singleton cache instance
     const papers = paperCache.getPapers();
     setAllPapers(papers);
     setFilteredPapers(papers);
@@ -56,17 +43,6 @@ export default function DashboardPage() {
     }
     setFilteredPapers(papers);
   };
-  
-  if (isLoading || !isAuthenticated) {
-    return (
-       <div className="flex min-h-[calc(100vh-8rem)] w-full items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <BrainCircuit className="h-12 w-12 text-primary animate-pulse" />
-          <p className="text-muted-foreground">Verifying your session...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8">

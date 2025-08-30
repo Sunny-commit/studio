@@ -1,31 +1,16 @@
-
 'use client';
 
 import Link from 'next/link';
-import { BrainCircuit, LogOut, User, Menu, FileUp, LogIn } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
-
+import { BrainCircuit, Menu, FileUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { usePathname } from 'next/navigation';
-import { Skeleton } from '../ui/skeleton';
-
 
 export default function Header() {
-  const { user, isAuthenticated, isLoading } = useAuth();
   const pathname = usePathname();
 
   const navLinks = [
@@ -33,63 +18,32 @@ export default function Header() {
     { href: '/leaderboard', label: 'Leaderboard' },
     { href: '/ai-assistant', label: 'AI Assistant' },
   ];
-  
-  const renderAuthContent = () => {
-    if (isLoading) {
-      return (
-        <div className="flex items-center gap-2">
-            <Skeleton className="h-9 w-28 rounded-md" />
-            <Skeleton className="h-10 w-10 rounded-full" />
-        </div>
-      );
-    }
 
-    if (isAuthenticated && user) {
-      return (
-        <>
-            <div className="hidden md:flex items-center gap-2">
-                 <Button asChild size="sm">
+  return (
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-16 items-center justify-between">
+        <div className="flex items-center gap-6">
+          <Link href="/" className="flex items-center gap-2">
+            <BrainCircuit className="h-7 w-7 text-primary" />
+            <span className="font-headline text-xl font-bold">SolveAI</span>
+          </Link>
+          <nav className="hidden items-center gap-2 md:flex">
+            {navLinks.map(link => (
+                <Button key={link.href} variant={pathname === link.href ? "secondary" : "ghost"} size="sm" asChild className="font-medium">
+                    <Link href={link.href}>{link.label}</Link>
+                </Button>
+            ))}
+          </nav>
+        </div>
+        <div className="flex items-center gap-4">
+            <div className="hidden md:flex">
+                <Button asChild>
                    <Link href="/submit-paper">
                      <FileUp className="mr-2 h-4 w-4" />
                      Submit Paper
                    </Link>
                  </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={user.picture} alt={user.name} />
-                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end" forceMount>
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{user.name}</p>
-                         <p className="text-xs leading-none text-muted-foreground">
-                          {user.email}
-                        </p>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/setup-profile">
-                        <User className="mr-2 h-4 w-4" />
-                        <span>Profile</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                       <Link href="/api/auth/logout">
-                         <LogOut className="mr-2 h-4 w-4" />
-                         Sign Out
-                       </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
             </div>
-
             <Sheet>
                 <SheetTrigger asChild>
                     <Button variant="outline" size="icon" className="md:hidden">
@@ -104,62 +58,12 @@ export default function Header() {
                                 {link.label}
                             </Link>
                         ))}
+                         <Link href="/submit-paper" className="text-muted-foreground hover:text-foreground">
+                            Submit Paper
+                        </Link>
                     </nav>
-                     <div className="mt-6">
-                         <div className="space-y-4">
-                             <div className="flex items-center gap-3 border-t pt-4">
-                                <Avatar className="h-10 w-10">
-                                  <AvatarImage src={user.picture} alt={user.name} />
-                                  <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <p className="text-sm font-medium leading-none">{user.name}</p>
-                                  <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
-                                </div>
-                             </div>
-                             <Button asChild className="w-full">
-                                <Link href="/api/auth/logout">Sign Out</Link>
-                             </Button>
-                           </div>
-                    </div>
                 </SheetContent>
             </Sheet>
-        </>
-      );
-    }
-
-    // Not authenticated, not loading
-    return (
-       <Button asChild>
-          <Link href="/api/auth/google">
-            <LogIn className="mr-2 h-4 w-4" />
-            Sign In
-          </Link>
-        </Button>
-    )
-  };
-
-
-  return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-6">
-          <Link href={isAuthenticated ? "/dashboard" : "/"} className="flex items-center gap-2">
-            <BrainCircuit className="h-7 w-7 text-primary" />
-            <span className="font-headline text-xl font-bold">SolveAI</span>
-          </Link>
-          {isAuthenticated && (
-            <nav className="hidden items-center gap-2 md:flex">
-              {navLinks.map(link => (
-                  <Button key={link.href} variant={pathname === link.href ? "secondary" : "ghost"} size="sm" asChild className="font-medium">
-                      <Link href={link.href}>{link.label}</Link>
-                  </Button>
-              ))}
-            </nav>
-          )}
-        </div>
-        <div className="flex items-center gap-4">
-          {renderAuthContent()}
         </div>
       </div>
     </header>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
@@ -14,11 +13,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, Loader2, FileUp, Replace, Power, LogIn } from 'lucide-react';
+import { Upload, Loader2, FileUp, Replace } from 'lucide-react';
 import { paperCache } from '@/lib/paper-cache';
 import { uploadFile } from '@/services/drive-service';
 import type { QuestionPaper } from '@/lib/types';
-import { useAuth } from '@/hooks/use-auth';
 
 const paperSchema = z.object({
   subject: z.string().min(3, { message: 'Subject must be at least 3 characters long.' }),
@@ -53,7 +51,6 @@ function SubmitPaperFormComponent() {
   const router = useRouter();
   const paperId = searchParams.get('paperId');
   const isEditMode = !!paperId;
-  const { isAuthenticated, isLoading } = useAuth();
   
   const existingPaper = isEditMode ? paperCache.getPaperById(paperId) : null;
 
@@ -73,44 +70,13 @@ function SubmitPaperFormComponent() {
   });
   
   useEffect(() => {
-    const authed = searchParams.get('authed');
-    if (authed) {
-        toast({
-            title: 'Google Drive Connected!',
-            description: 'You can now upload files directly to your drive.',
-        });
-        const cleanUrl = paperId ? `/submit-paper?paperId=${paperId}` : '/submit-paper';
-        router.replace(cleanUrl);
-    }
-  }, [searchParams, toast, router, paperId]);
-  
-  useEffect(() => {
     if (isEditMode && !existingPaper) {
         toast({ variant: 'destructive', title: 'Error', description: 'Paper not found.' });
         router.push('/dashboard');
     }
   }, [isEditMode, existingPaper, toast, router]);
 
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-        toast({
-            variant: 'destructive',
-            title: 'Authentication Required',
-            description: 'Please sign in to submit a paper.',
-        });
-    }
-  }, [isLoading, isAuthenticated, toast]);
-
   const onSubmit = async (values: z.infer<typeof paperSchema>) => {
-    if (!isAuthenticated) {
-        toast({
-            variant: 'destructive',
-            title: 'Not Authenticated',
-            description: 'Please sign in with Google to submit a paper.',
-        });
-        return;
-    }
-    
     setIsSubmitting(true);
 
     try {
@@ -120,7 +86,7 @@ function SubmitPaperFormComponent() {
       if (fileInput) {
          toast({
             title: 'Uploading File...',
-            description: 'Please wait while we upload your file to Google Drive. This may take a moment.',
+            description: 'Please wait while we upload your file. This may take a moment.',
           });
         fileUrl = await uploadFile(fileInput); 
       } else if (!isEditMode) {
@@ -165,7 +131,7 @@ function SubmitPaperFormComponent() {
        toast({
         variant: 'destructive',
         title: 'Submission Failed',
-        description: 'Could not upload the paper. Please check your connection or try connecting Google Drive again.',
+        description: 'Could not upload the paper. Please try again.',
       });
     } finally {
         setIsSubmitting(false);
@@ -176,7 +142,6 @@ function SubmitPaperFormComponent() {
   const pageTitle = isEditMode ? 'Replace Paper' : 'Submit a Paper';
   const pageDescription = isEditMode ? 'Update an existing question paper with a new file or corrected details.' : 'Help the community grow by sharing past question papers.';
   const buttonText = isEditMode ? 'Replace Paper' : 'Submit Paper';
-  const redirectPath = `/submit-paper${paperId ? `?paperId=${paperId}` : ''}`;
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8">
@@ -196,20 +161,6 @@ function SubmitPaperFormComponent() {
             <CardDescription>{isEditMode ? 'Edit the details and upload a new file if needed.' : 'Fill in the details below to upload a new question paper.'}</CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-             <div className="text-center py-12"><Loader2 className="mx-auto h-8 w-8 animate-spin" /></div>
-          ) : !isAuthenticated ? (
-             <div className="text-center py-12">
-                <h3 className="text-xl font-semibold mb-4">Please Sign In</h3>
-                <p className="text-muted-foreground mb-6">You need to be signed in to submit or replace papers.</p>
-                 <Button asChild>
-                    <Link href={`/api/auth/google?redirect=${redirectPath}`}>
-                        <LogIn className="mr-2 h-4 w-4" />
-                        Sign In with Google
-                    </Link>
-                </Button>
-             </div>
-          ) : (
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -369,13 +320,7 @@ function SubmitPaperFormComponent() {
                   )}
                 />
 
-                <div className="flex justify-between items-center pt-2">
-                   <Button type="button" variant="outline" asChild>
-                     <Link href={`/api/auth/google?redirect=${redirectPath}&authed=true`}>
-                       <Power className="mr-2 h-4 w-4" />
-                       Connect Drive
-                     </Link>
-                   </Button>
+                <div className="flex justify-end items-center pt-2">
                   <Button type="submit" disabled={isSubmitting} size="lg" className="font-bold">
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {buttonText}
@@ -383,7 +328,6 @@ function SubmitPaperFormComponent() {
                 </div>
               </form>
             </Form>
-          )}
         </CardContent>
       </Card>
     </div>

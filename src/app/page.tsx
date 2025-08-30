@@ -2,80 +2,86 @@
 'use client';
 
 import Link from 'next/link';
-import { BrainCircuit, LogIn } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { BrainCircuit, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import Image from 'next/image';
 
 export default function LandingPage() {
-  const { isAuthenticated, isLoading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      router.push('/dashboard');
-    }
-  }, [isAuthenticated, isLoading, router]);
-
-  if (isLoading || isAuthenticated) {
-    return (
-      <div className="flex min-h-screen w-full items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <BrainCircuit className="h-12 w-12 text-primary animate-pulse" />
-          <p className="text-muted-foreground">Loading your experience...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex min-h-[calc(100vh-10rem)] w-full items-center justify-center p-4">
-      <div className="container mx-auto grid grid-cols-1 gap-16 lg:grid-cols-2 items-center">
-        <div className="flex flex-col justify-center space-y-6">
-          <div className="flex items-center gap-3">
-            <BrainCircuit className="h-10 w-10 text-primary" />
-            <h1 className="font-headline text-4xl font-bold tracking-tighter sm:text-5xl">
-              SolveAI
-            </h1>
+    <div className="flex flex-col">
+      <section className="w-full py-20 md:py-32 lg:py-40 bg-gradient-to-br from-primary/10 to-background">
+        <div className="container mx-auto grid grid-cols-1 gap-12 lg:grid-cols-2 items-center px-4">
+          <div className="flex flex-col justify-center space-y-6">
+            <div className="flex items-center gap-3">
+              <BrainCircuit className="h-12 w-12 text-primary" />
+              <h1 className="font-headline text-5xl font-bold tracking-tighter sm:text-6xl">
+                SolveAI
+              </h1>
+            </div>
+            <p className="max-w-xl text-xl text-foreground/80">
+              The collaborative platform to find, solve, and share university exam questions. Ace your exams with community-powered solutions and AI assistance.
+            </p>
+            <div className="flex gap-4">
+              <Button asChild size="lg" className="font-bold text-lg px-8 py-6">
+                <Link href="/dashboard">
+                  Explore Papers
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+            </div>
           </div>
-          <p className="max-w-md text-xl text-foreground/80">
-            The collaborative platform to find, solve, and share university exam questions. Ace your exams with community-powered solutions.
-          </p>
-           <div className="flex gap-4">
-            <Button asChild size="lg" className="font-bold">
-              <Link href="/api/auth/google?redirect=/dashboard">Get Started</Link>
-            </Button>
+          <div className="relative flex items-center justify-center">
+             <Image 
+                src="https://picsum.photos/seed/landing/600/400"
+                width={600}
+                height={400}
+                alt="Students collaborating"
+                data-ai-hint="students collaborating"
+                className="rounded-xl shadow-2xl aspect-video object-cover"
+             />
           </div>
         </div>
+      </section>
+      
+      <section className="w-full py-20 md:py-24">
+        <div className="container mx-auto px-4">
+            <div className="text-center space-y-4 mb-12">
+                <h2 className="font-headline text-4xl font-bold tracking-tighter">Features</h2>
+                <p className="text-lg text-muted-foreground max-w-2xl mx-auto">Everything you need to conquer your exams.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Vast Paper Library</CardTitle>
+                        <CardDescription>Access a huge, community-contributed repository of past exam papers.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Image src="https://picsum.photos/seed/library/400/250" width={400} height={250} alt="Paper library" data-ai-hint="library books" className="rounded-lg object-cover aspect-video" />
+                    </CardContent>
+                 </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Community Solutions</CardTitle>
+                        <CardDescription>Learn from detailed solutions submitted and voted on by fellow students.</CardDescription>
+                    </CardHeader>
+                     <CardContent>
+                        <Image src="https://picsum.photos/seed/community/400/250" width={400} height={250} alt="Community solutions" data-ai-hint="community discussion" className="rounded-lg object-cover aspect-video" />
+                    </CardContent>
+                 </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>AI Assistant</CardTitle>
+                        <CardDescription>Get unstuck with one-on-one help from a powerful AI tutor, available 24/7.</CardDescription>
+                    </CardHeader>
+                     <CardContent>
+                        <Image src="https://picsum.photos/seed/ai/400/250" width={400} height={250} alt="AI assistant" data-ai-hint="friendly robot" className="rounded-lg object-cover aspect-video" />
+                    </CardContent>
+                 </Card>
+            </div>
+        </div>
+      </section>
 
-        <div className="relative flex items-center justify-center">
-            <div className="absolute -inset-2 rounded-lg bg-gradient-to-r from-primary to-accent opacity-75 blur"></div>
-            <Card className="relative w-full max-w-sm">
-              <CardHeader className="text-center">
-                <CardTitle className="font-headline text-2xl">Welcome!</CardTitle>
-                <CardDescription>Sign in with your Google account to continue.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col space-y-4">
-                  <Button variant="outline" asChild>
-                    <Link href="/api/auth/google?redirect=/dashboard">
-                      <svg role="img" viewBox="0 0 24 24" className="mr-2 h-4 w-4">
-                        <path
-                          fill="currentColor"
-                          d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.02-2.3 1.62-3.9 1.62-3.03 0-5.49-2.3-5.49-5.22s2.46-5.22 5.49-5.22c1.39 0 2.53.54 3.44 1.45l2.5-2.5C16.16 3.57 14.09 3 12.48 3c-4.97 0-9 3.88-9 8.7s4.03 8.7 9 8.7c2.53 0 4.46-.8 6.04-2.43 1.64-1.64 2.04-4.03 2.04-6.69 0-.61-.05-1.21-.16-1.8z"
-                        ></path>
-                      </svg>
-                      Sign in with Google
-                    </Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-        </div>
-      </div>
     </div>
   );
 }

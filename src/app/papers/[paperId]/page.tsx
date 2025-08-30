@@ -1,7 +1,6 @@
-
 'use client';
 
-import { notFound, useRouter } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { paperCache } from '@/lib/paper-cache';
 import type { Question } from '@/lib/types';
@@ -14,11 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState, useCallback } from 'react';
-import { useAuth } from '@/hooks/use-auth';
 
 export default function PaperPage({ params }: { params: { paperId: string } }) {
-  const { isAuthenticated, isLoading } = useAuth();
-  const router = useRouter();
   const [paper, setPaper] = useState(() => paperCache.getPaperById(params.paperId));
 
   const refreshPaper = useCallback(() => {
@@ -39,17 +35,6 @@ export default function PaperPage({ params }: { params: { paperId: string } }) {
     refreshPaper();
   };
   
-  if (isLoading) {
-    return (
-       <div className="flex min-h-[calc(100vh-8rem)] w-full items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <BrainCircuit className="h-12 w-12 text-primary animate-pulse" />
-          <p className="text-muted-foreground">Loading Paper...</p>
-        </div>
-      </div>
-    );
-  }
-
   if (!paper) {
     return (
        <div className="container mx-auto max-w-6xl py-8 px-4 text-center">
@@ -93,14 +78,12 @@ export default function PaperPage({ params }: { params: { paperId: string } }) {
                         Download
                       </a>
                     </Button>
-                    {isAuthenticated && (
-                       <Button asChild variant="outline">
-                        <Link href={`/submit-paper?paperId=${paper.id}`}>
-                          <Replace className="mr-2 h-4 w-4" />
-                          Replace
-                        </Link>
-                      </Button>
-                    )}
+                    <Button asChild variant="outline">
+                      <Link href={`/submit-paper?paperId=${paper.id}`}>
+                        <Replace className="mr-2 h-4 w-4" />
+                        Replace
+                      </Link>
+                    </Button>
                   </div>
                 </div>
               </CardHeader>
@@ -171,19 +154,10 @@ export default function PaperPage({ params }: { params: { paperId: string } }) {
                       ) : (
                         <p className="text-center text-sm text-muted-foreground py-4">No solutions yet. Be the first to add one!</p>
                       )}
-                      {isAuthenticated ? (
-                         <div className="mt-6 border-t pt-6">
-                           <h4 className="font-semibold text-lg mb-4">Add Your Solution</h4>
-                           <AddSolutionForm question={question} paperId={paper.id} onSolutionAdded={handleSolutionAdded} />
-                        </div>
-                      ) : (
-                        <div className="mt-6 border-t pt-6 text-center">
-                            <p className="text-muted-foreground">You must be signed in to add a solution.</p>
-                            <Button asChild variant="link">
-                                <Link href="/api/auth/google?redirect=/papers/${paper.id}">Sign In</Link>
-                            </Button>
-                        </div>
-                      )}
+                      <div className="mt-6 border-t pt-6">
+                        <h4 className="font-semibold text-lg mb-4">Add Your Solution</h4>
+                        <AddSolutionForm question={question} paperId={paper.id} onSolutionAdded={handleSolutionAdded} />
+                      </div>
                     </AccordionContent>
                    </Card>
                 </AccordionItem>

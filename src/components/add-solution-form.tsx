@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -17,8 +16,7 @@ import type { Question, User } from '@/lib/types';
 import { reviewSolution, type ReviewSolutionOutput } from '@/ai/flows/review-solution';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from './ui/alert-dialog';
 import { paperCache } from '@/lib/paper-cache';
-import { useAuth } from '@/hooks/use-auth';
-import { useRouter } from 'next/navigation';
+import { mockUsers } from '@/lib/mock-data';
 
 const solutionSchema = z.object({
   solutionText: z.string().optional(),
@@ -36,7 +34,6 @@ interface AddSolutionFormProps {
 
 export function AddSolutionForm({ question, paperId, onSolutionAdded }: AddSolutionFormProps) {
   const { toast } = useToast();
-  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isReviewing, setIsReviewing] = useState(false);
   const [reviewResult, setReviewResult] = useState<ReviewSolutionOutput | null>(null);
@@ -51,10 +48,6 @@ export function AddSolutionForm({ question, paperId, onSolutionAdded }: AddSolut
   });
 
   const onSubmit = async (values: z.infer<typeof solutionSchema>) => {
-    if (!user) {
-      toast({ variant: 'destructive', title: 'Not Signed In', description: 'You must be signed in to add a solution.' });
-      return;
-    }
     setIsSubmitting(true);
     
     try {
@@ -70,15 +63,11 @@ export function AddSolutionForm({ question, paperId, onSolutionAdded }: AddSolut
         contentType = 'text';
         content = values.solutionText || '';
       }
+      
+      // Since there is no login, we'll assign a random mock user as the author.
+      const randomAuthor = mockUsers[Math.floor(Math.random() * mockUsers.length)];
 
-      const mockAuthor: User = {
-        id: user.id || 'u_current',
-        name: user.name,
-        avatarUrl: user.picture,
-        reputation: 0, // Current user's reputation isn't tracked client-side
-      };
-
-      paperCache.addSolution(paperId, question.id, { content, content_type: contentType }, mockAuthor);
+      paperCache.addSolution(paperId, question.id, { content, content_type: contentType }, randomAuthor);
       
       toast({
         title: 'Solution Submitted!',
