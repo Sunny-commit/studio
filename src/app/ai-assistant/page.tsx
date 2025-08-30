@@ -30,7 +30,7 @@ type ChatMessage = {
 
 // This is a simple check that will be replaced by the build process.
 // It's not foolproof but helps in development.
-const isApiKeyMissing = !process.env.NEXT_PUBLIC_GEMINI_API_KEY && process.env.NODE_ENV === 'development';
+const isApiKeyMissing = !process.env.GEMINI_API_KEY && process.env.NODE_ENV === 'development';
 
 
 export default function AIAssistantPage() {
