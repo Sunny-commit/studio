@@ -6,7 +6,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { runFlow } from '@genkit-ai/next/client';
-import { Bot, Loader2, Paperclip, Send, User, AlertTriangle } from 'lucide-react';
+import { Bot, Loader2, Paperclip, Send, User } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,6 @@ import { privateChat } from '@/ai/flows/private-chat-flow';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const chatSchema = z.object({
   questionText: z.string().min(1, 'Please enter a question.'),
@@ -27,11 +26,6 @@ type ChatMessage = {
   sender: 'user' | 'ai';
   text: string;
 };
-
-// This is a simple check that will be replaced by the build process.
-// It's not foolproof but helps in development.
-const isApiKeyMissing = !process.env.GEMINI_API_KEY && process.env.NODE_ENV === 'development';
-
 
 export default function AIAssistantPage() {
   const { toast } = useToast();
@@ -81,7 +75,7 @@ export default function AIAssistantPage() {
       toast({
         variant: 'destructive',
         title: 'AI Assistant Failed',
-        description: 'Could not get a response. Ensure your API key is configured correctly.',
+        description: 'Could not get a response from the AI. Please ensure your API key is configured correctly in the .env file and try again.',
       });
     } finally {
       setIsSubmitting(false);
@@ -113,15 +107,6 @@ export default function AIAssistantPage() {
         <CardContent className="flex-1 flex flex-col p-0">
           <ScrollArea className="flex-1 p-6">
             <div className="space-y-6">
-               {isApiKeyMissing && (
-                <Alert variant="destructive">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>API Key Missing</AlertTitle>
-                  <AlertDescription>
-                    The AI Assistant may not work. Please set your `GEMINI_API_KEY` in the `.env` file.
-                  </AlertDescription>
-                </Alert>
-              )}
               {chatHistory.length === 0 ? (
                  <div className="text-center text-muted-foreground">Ask a question to start the conversation.</div>
               ) : (
