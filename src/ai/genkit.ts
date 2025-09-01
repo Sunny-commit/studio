@@ -8,7 +8,11 @@ export const ai = genkit({
     googleAI({
       apiVersion: 'v1beta',
     }),
-    next(),
+    next({
+      // The Genkit Next.js plugin will automatically create the API routes.
+      // We are creating them manually in src/app/api/flows/[slug]/route.ts
+      // so we leave this empty.
+    }),
   ],
   // Log errors to the console.
   logLevel: 'error',
