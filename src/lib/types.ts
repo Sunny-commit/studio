@@ -34,7 +34,7 @@ export interface QuestionPaper {
   subject: string;
   year: number;
   examType: 'mid1' | 'mid2' | 'mid3' | 'Final Sem Exam';
-  branch: 'CSE' | 'ECE' | 'MECH' | 'CIVIL';
+  branch: 'CSE' | 'ECE' | 'MECH' | 'CIVIL' | 'common';
   campus: 'RK Valley' | 'Nuzvid' | 'Srikakulam' | 'Ongole';
   fileUrl: string;
   questions: Question[];

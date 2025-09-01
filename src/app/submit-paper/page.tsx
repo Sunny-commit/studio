@@ -39,7 +39,7 @@ const paperSchema = z.object({
 
 const years = ['2024', '2023', '2022', '2021', '2020'];
 const examTypes = ['mid1', 'mid2', 'mid3', 'Final Sem Exam'];
-const branches = ['CSE', 'ECE', 'MECH', 'CIVIL'];
+const branches = ['CSE', 'ECE', 'MECH', 'CIVIL', 'common'];
 const campuses = ['RK Valley', 'Nuzvid', 'Srikakulam', 'Ongole'];
 const yearsOfStudy = ['P1', 'P2', 'E1', 'E2', 'E3', 'E4'];
 const semesters = ['1', '2'];
@@ -68,6 +68,15 @@ function SubmitPaperFormComponent() {
       file: undefined,
     }
   });
+
+  const yearOfStudy = form.watch('yearOfStudy');
+  const isBranchHidden = ['P1', 'P2'].includes(yearOfStudy);
+
+  useEffect(() => {
+    if (isBranchHidden) {
+      form.setValue('branch', 'common');
+    }
+  }, [isBranchHidden, form]);
   
   useEffect(() => {
     if (isEditMode && !existingPaper) {
@@ -229,24 +238,26 @@ function SubmitPaperFormComponent() {
                       </FormItem>
                     )}
                   />
-                   <FormField
-                    control={form.control}
-                    name="branch"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Branch</FormLabel>
-                         <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
-                           <FormControl>
-                            <SelectTrigger><SelectValue placeholder="Select branch" /></SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                             {branches.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {!isBranchHidden && (
+                     <FormField
+                      control={form.control}
+                      name="branch"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Branch</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger><SelectValue placeholder="Select branch" /></SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {branches.filter(b => b !== 'common').map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                   <FormField
                     control={form.control}
                     name="campus"
