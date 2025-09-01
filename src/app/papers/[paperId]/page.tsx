@@ -1,10 +1,10 @@
 
 'use client';
 
-import { notFound } from 'next/navigation';
+import { notFound, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { paperCache } from '@/lib/paper-cache';
-import type { Question } from '@/lib/types';
+import type { Question, QuestionPaper } from '@/lib/types';
 import { SolutionCard } from '@/components/solution-card';
 import { AddSolutionForm } from '@/components/add-solution-form';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -14,16 +14,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState, useCallback } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function PaperPage({ params }: { params: { paperId: string } }) {
   const { paperId } = params;
-  const [paper, setPaper] = useState(() => paperCache.getPaperById(paperId));
+  const [paper, setPaper] = useState<QuestionPaper | null | undefined>(undefined);
 
   const refreshPaper = useCallback(() => {
     const currentPaper = paperCache.getPaperById(paperId);
     if (!currentPaper) {
-      notFound();
+      setPaper(null); // Paper not found
     } else {
+      // Create a deep copy to ensure state updates trigger re-renders
       setPaper(JSON.parse(JSON.stringify(currentPaper)));
     }
   }, [paperId]);
@@ -31,23 +33,34 @@ export default function PaperPage({ params }: { params: { paperId: string } }) {
   useEffect(() => {
     refreshPaper();
   }, [paperId, refreshPaper]);
-  
-  // This is a simple way to force a re-render when a solution is added.
-  const handleSolutionAdded = () => {
-    refreshPaper();
-  };
+
+  if (paper === undefined) {
+    // Loading state
+    return (
+      <div className="container mx-auto max-w-6xl py-8 px-4">
+        <div className="mb-8">
+          <Skeleton className="h-10 w-3/4" />
+          <div className="mt-4 flex flex-wrap items-center gap-4">
+            <Skeleton className="h-6 w-24" />
+            <Skeleton className="h-6 w-20" />
+            <Skeleton className="h-6 w-28" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-3">
+          <div className="lg:col-span-2 space-y-8">
+            <Skeleton className="h-[600px] w-full" />
+          </div>
+          <div className="lg:col-span-1 space-y-6">
+            <Skeleton className="h-40 w-full" />
+            <Skeleton className="h-64 w-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   if (!paper) {
-    return (
-       <div className="container mx-auto max-w-6xl py-8 px-4 text-center">
-         <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
-         <h1 className="mt-4 font-headline text-3xl font-bold">Paper Not Found</h1>
-         <p className="mt-2 text-muted-foreground">The paper you are looking for does not exist.</p>
-         <Button asChild className="mt-6">
-           <Link href="/dashboard">Back to Dashboard</Link>
-         </Button>
-       </div>
-    );
+    notFound();
   }
   
   const answeredQuestions = paper.questions.filter(q => q.solutions.length > 0).length;
@@ -132,7 +145,7 @@ export default function PaperPage({ params }: { params: { paperId: string } }) {
 
           <h2 className="font-headline text-2xl font-semibold">Questions & Solutions</h2>
           {paper.questions.length > 0 ? (
-            <Accordion type="single" collapsible className="w-full space-y-4" defaultValue={paper.questions[0].id}>
+            <Accordion type="single" collapsible className="w-full space-y-4" defaultValue={paper.questions.length > 0 ? paper.questions[0].id : undefined}>
               {paper.questions.map((question: Question) => (
                 <AccordionItem value={question.id} key={question.id} className="border-b-0">
                   <Card className="overflow-hidden">
@@ -158,7 +171,7 @@ export default function PaperPage({ params }: { params: { paperId: string } }) {
                       )}
                       <div className="mt-6 border-t pt-6">
                         <h4 className="font-semibold text-lg mb-4">Add Your Solution</h4>
-                        <AddSolutionForm question={question} paperId={paper.id} onSolutionAdded={handleSolutionAdded} />
+                        <AddSolutionForm question={question} paperId={paper.id} onSolutionAdded={refreshPaper} />
                       </div>
                     </AccordionContent>
                    </Card>
@@ -176,3 +189,5 @@ export default function PaperPage({ params }: { params: { paperId: string } }) {
     </div>
   );
 }
+
+    
