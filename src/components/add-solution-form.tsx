@@ -65,6 +65,7 @@ export function AddSolutionForm({ question, paperId, onSolutionAdded }: AddSolut
       }
       
       // Since there is no login, we'll assign a random mock user as the author.
+      // This logic is now safely inside the client-side onSubmit handler.
       const randomAuthor = mockUsers[Math.floor(Math.random() * mockUsers.length)];
 
       paperCache.addSolution(paperId, question.id, { content, content_type: contentType }, randomAuthor);
