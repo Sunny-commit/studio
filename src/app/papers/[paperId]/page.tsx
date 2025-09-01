@@ -1,7 +1,7 @@
 
 'use client';
 
-import { notFound, usePathname } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { paperCache } from '@/lib/paper-cache';
 import type { Question, QuestionPaper } from '@/lib/types';
@@ -17,22 +17,21 @@ import { useEffect, useState, useCallback } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function PaperPage({ params }: { params: { paperId: string } }) {
-  const { paperId } = params;
   const [paper, setPaper] = useState<QuestionPaper | null | undefined>(undefined);
 
   const refreshPaper = useCallback(() => {
-    const currentPaper = paperCache.getPaperById(paperId);
+    const currentPaper = paperCache.getPaperById(params.paperId);
     if (!currentPaper) {
       setPaper(null); // Paper not found
     } else {
       // Create a deep copy to ensure state updates trigger re-renders
       setPaper(JSON.parse(JSON.stringify(currentPaper)));
     }
-  }, [paperId]);
+  }, [params.paperId]);
 
   useEffect(() => {
     refreshPaper();
-  }, [paperId, refreshPaper]);
+  }, [refreshPaper]);
 
   if (paper === undefined) {
     // Loading state
@@ -189,5 +188,3 @@ export default function PaperPage({ params }: { params: { paperId: string } }) {
     </div>
   );
 }
-
-    
