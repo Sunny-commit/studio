@@ -1,3 +1,4 @@
+
 'use client';
 
 import { notFound } from 'next/navigation';
@@ -15,20 +16,21 @@ import { Button } from '@/components/ui/button';
 import { useEffect, useState, useCallback } from 'react';
 
 export default function PaperPage({ params }: { params: { paperId: string } }) {
-  const [paper, setPaper] = useState(() => paperCache.getPaperById(params.paperId));
+  const { paperId } = params;
+  const [paper, setPaper] = useState(() => paperCache.getPaperById(paperId));
 
   const refreshPaper = useCallback(() => {
-    const currentPaper = paperCache.getPaperById(params.paperId);
+    const currentPaper = paperCache.getPaperById(paperId);
     if (!currentPaper) {
       notFound();
     } else {
       setPaper(JSON.parse(JSON.stringify(currentPaper)));
     }
-  }, [params.paperId]);
+  }, [paperId]);
 
   useEffect(() => {
     refreshPaper();
-  }, [params.paperId, refreshPaper]);
+  }, [paperId, refreshPaper]);
   
   // This is a simple way to force a re-render when a solution is added.
   const handleSolutionAdded = () => {
