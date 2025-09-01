@@ -19,19 +19,21 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function PaperPage({ params }: { params: { paperId: string } }) {
   const [paper, setPaper] = useState<QuestionPaper | null | undefined>(undefined);
 
-  const refreshPaper = useCallback(() => {
-    const currentPaper = paperCache.getPaperById(params.paperId);
+  const refreshPaper = useCallback((id: string) => {
+    const currentPaper = paperCache.getPaperById(id);
     if (!currentPaper) {
       setPaper(null); // Paper not found
     } else {
       // Create a deep copy to ensure state updates trigger re-renders
       setPaper(JSON.parse(JSON.stringify(currentPaper)));
     }
-  }, [params.paperId]);
+  }, []);
 
   useEffect(() => {
-    refreshPaper();
-  }, [refreshPaper]);
+    if (params.paperId) {
+        refreshPaper(params.paperId);
+    }
+  }, [params.paperId, refreshPaper]);
 
   if (paper === undefined) {
     // Loading state
@@ -170,7 +172,7 @@ export default function PaperPage({ params }: { params: { paperId: string } }) {
                       )}
                       <div className="mt-6 border-t pt-6">
                         <h4 className="font-semibold text-lg mb-4">Add Your Solution</h4>
-                        <AddSolutionForm question={question} paperId={paper.id} onSolutionAdded={refreshPaper} />
+                        <AddSolutionForm question={question} paperId={paper.id} onSolutionAdded={() => refreshPaper(paper.id)} />
                       </div>
                     </AccordionContent>
                    </Card>
