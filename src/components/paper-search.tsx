@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,22 +11,33 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Filter, Search } from 'lucide-react';
+import { useDebounce } from 'use-debounce';
 
-interface PaperSearchProps {
-    onSearch: (filters: { branch: string; year: string; subject: string, yearOfStudy: string, semester: string, campus: string, examType: string }) => void;
+type Filters = {
+    branch: string;
+    year: string;
+    subject: string;
+    yearOfStudy: string;
+    semester: string;
+    campus: string;
+    examType: string;
 }
 
-export function PaperSearch({ onSearch }: PaperSearchProps) {
-  const [branch, setBranch] = useState('all');
-  const [year, setYear] = useState('all');
-  const [subject, setSubject] = useState('');
-  const [yearOfStudy, setYearOfStudy] = useState('all');
-  const [semester, setSemester] = useState('all');
-  const [campus, setCampus] = useState('all');
-  const [examType, setExamType] = useState('all');
+interface PaperSearchProps {
+    onSearch: (filters: Filters) => void;
+    initialFilters: Filters;
+}
 
-  const handleSearchClick = () => {
-    onSearch({ branch, year, subject, yearOfStudy, semester, campus, examType });
+export function PaperSearch({ onSearch, initialFilters }: PaperSearchProps) {
+  const [filters, setFilters] = useState(initialFilters);
+  const [debouncedFilters] = useDebounce(filters, 300);
+
+  useEffect(() => {
+    onSearch(debouncedFilters);
+  }, [debouncedFilters, onSearch]);
+
+  const handleFilterChange = (key: keyof Filters, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
   };
   
   const years = ['2024', '2023', '2022', '2021'];
@@ -42,8 +53,8 @@ export function PaperSearch({ onSearch }: PaperSearchProps) {
         <Filter className="mr-2 h-5 w-5 text-primary" />
         <h3 className="font-headline text-xl font-semibold">Filter Papers</h3>
       </div>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Select value={branch} onValueChange={setBranch}>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Select value={filters.branch} onValueChange={(value) => handleFilterChange('branch', value)}>
           <SelectTrigger>
             <SelectValue placeholder="Select Branch" />
           </SelectTrigger>
@@ -53,7 +64,7 @@ export function PaperSearch({ onSearch }: PaperSearchProps) {
           </SelectContent>
         </Select>
 
-        <Select value={year} onValueChange={setYear}>
+        <Select value={filters.year} onValueChange={(value) => handleFilterChange('year', value)}>
           <SelectTrigger>
             <SelectValue placeholder="Select Year" />
           </SelectTrigger>
@@ -63,7 +74,7 @@ export function PaperSearch({ onSearch }: PaperSearchProps) {
           </SelectContent>
         </Select>
         
-        <Select value={examType} onValueChange={setExamType}>
+        <Select value={filters.examType} onValueChange={(value) => handleFilterChange('examType', value)}>
           <SelectTrigger>
             <SelectValue placeholder="Select Exam Type" />
           </SelectTrigger>
@@ -73,7 +84,7 @@ export function PaperSearch({ onSearch }: PaperSearchProps) {
           </SelectContent>
         </Select>
 
-        <Select value={yearOfStudy} onValueChange={setYearOfStudy}>
+        <Select value={filters.yearOfStudy} onValueChange={(value) => handleFilterChange('yearOfStudy', value)}>
           <SelectTrigger>
             <SelectValue placeholder="Select Year of Study" />
           </SelectTrigger>
@@ -83,7 +94,7 @@ export function PaperSearch({ onSearch }: PaperSearchProps) {
           </SelectContent>
         </Select>
 
-        <Select value={semester} onValueChange={setSemester}>
+        <Select value={filters.semester} onValueChange={(value) => handleFilterChange('semester', value)}>
           <SelectTrigger>
             <SelectValue placeholder="Select Semester" />
           </SelectTrigger>
@@ -93,7 +104,7 @@ export function PaperSearch({ onSearch }: PaperSearchProps) {
           </SelectContent>
         </Select>
 
-        <Select value={campus} onValueChange={setCampus}>
+        <Select value={filters.campus} onValueChange={(value) => handleFilterChange('campus', value)}>
           <SelectTrigger>
             <SelectValue placeholder="Select Campus" />
           </SelectTrigger>
@@ -103,19 +114,14 @@ export function PaperSearch({ onSearch }: PaperSearchProps) {
           </SelectContent>
         </Select>
 
-        <div className="lg:col-span-3">
-            <div className="relative">
-                <Input
-                    placeholder="Search by subject (e.g., Mathematics-II)"
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    className="pr-10"
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearchClick()}
-                />
-                <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={handleSearchClick}>
-                    <Search className="h-4 w-4" />
-                </Button>
-            </div>
+        <div className="relative sm:col-span-2 lg:col-span-2">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+                placeholder="Search by subject (e.g., Mathematics-II)"
+                value={filters.subject}
+                onChange={(e) => handleFilterChange('subject', e.target.value)}
+                className="pl-9"
+            />
         </div>
       </div>
     </div>

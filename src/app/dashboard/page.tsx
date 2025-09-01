@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { PaperSearch } from '@/components/paper-search';
 import { PaperCard } from '@/components/paper-card';
 import type { QuestionPaper } from '@/lib/types';
@@ -8,18 +8,35 @@ import { paperCache } from '@/lib/paper-cache';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
+type Filters = {
+  branch: string;
+  year: string;
+  subject: string;
+  yearOfStudy: string;
+  semester: string;
+  campus: string;
+  examType: string;
+};
+
 export default function DashboardPage() {
   const [allPapers, setAllPapers] = useState<QuestionPaper[]>([]);
-  const [filteredPapers, setFilteredPapers] = useState<QuestionPaper[]>([]);
+  const [filters, setFilters] = useState<Filters>({
+    branch: 'all',
+    year: 'all',
+    subject: '',
+    yearOfStudy: 'all',
+    semester: 'all',
+    campus: 'all',
+    examType: 'all',
+  });
 
   useEffect(() => {
     const papers = paperCache.getPapers();
     setAllPapers(papers);
-    setFilteredPapers(papers);
   }, []);
 
-  const handleSearch = (filters: { branch: string; year: string; subject: string; yearOfStudy: string; semester: string; campus: string; examType: string; }) => {
-    let papers = [...paperCache.getPapers()];
+  const filteredPapers = useMemo(() => {
+    let papers = [...allPapers];
     if (filters.branch && filters.branch !== 'all') {
       papers = papers.filter(p => p.branch === filters.branch);
     }
@@ -41,7 +58,11 @@ export default function DashboardPage() {
     if (filters.subject) {
       papers = papers.filter(p => p.subject.toLowerCase().includes(filters.subject.toLowerCase()));
     }
-    setFilteredPapers(papers);
+    return papers;
+  }, [allPapers, filters]);
+
+  const handleSearch = (newFilters: Filters) => {
+    setFilters(newFilters);
   };
 
   return (
@@ -55,7 +76,7 @@ export default function DashboardPage() {
         </p>
       </section>
 
-      <PaperSearch onSearch={handleSearch} />
+      <PaperSearch onSearch={handleSearch} initialFilters={filters} />
 
       <section className="mt-12">
         <h2 className="font-headline text-3xl font-bold tracking-tight mb-6">
