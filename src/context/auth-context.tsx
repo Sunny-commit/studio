@@ -2,8 +2,8 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { onAuthStateChanged, signOut as firebaseSignOut, GoogleAuthProvider, signInWithPopup, User as FirebaseUser } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, signOut as firebaseSignOut, GoogleAuthProvider, signInWithPopup, User as FirebaseUser, Auth } from 'firebase/auth';
+import { getClientAuth } from '@/lib/firebase';
 import type { AuthenticatedUser } from '@/lib/types';
 import { usePathname, useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
@@ -41,17 +41,21 @@ const getUserFromCookie = (): AuthenticatedUser | null => {
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [auth, setAuth] = useState<Auth | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    // Try to get user from cookie first for faster initial load
+    // Initialize auth only on the client side
+    const authInstance = getClientAuth();
+    setAuth(authInstance);
+
     const cookieUser = getUserFromCookie();
     if (cookieUser) {
         setUser(cookieUser);
     }
     
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+    const unsubscribe = onAuthStateChanged(authInstance, async (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
         const idToken = await firebaseUser.getIdToken();
         const decodedToken: { name?: string; email?: string; picture?: string } = jwtDecode(idToken);
@@ -74,11 +78,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signInWithGoogle = async () => {
+    if (!auth) return;
     const provider = new GoogleAuthProvider();
     try {
       setLoading(true);
       await signInWithPopup(auth, provider);
-      // onAuthStateChanged will handle setting the user and cookie
       const redirectUrl = new URLSearchParams(window.location.search).get('redirect') || '/dashboard';
       router.push(redirectUrl);
     } catch (error) {
@@ -88,18 +92,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
+    if (!auth) return;
     try {
       await firebaseSignOut(auth);
-      // onAuthStateChanged will handle clearing the user and cookie
       router.push('/');
     } catch (error) {
       console.error('Error signing out', error);
     }
   };
   
-  // Route protection
-  const protectedRoutes = ['/ai-assistant', '/submit-paper', '/leaderboard', '/setup-profile'];
-  const isProtectedRoute = protectedRoutes.includes(pathname);
+  const protectedRoutes = ['/ai-assistant', '/submit-paper', '/leaderboard', '/setup-profile', '/papers'];
+  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
   useEffect(() => {
     if (!loading && !user && isProtectedRoute) {

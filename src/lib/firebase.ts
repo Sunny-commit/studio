@@ -2,7 +2,7 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
 
-const firebaseConfig = {
+export const firebaseConfig = {
   projectId: "solveai-q1vac",
   appId: "1:920819692967:web:9a0c0f15dc336b24eeb282",
   storageBucket: "solveai-q1vac.firebasestorage.app",
@@ -12,8 +12,16 @@ const firebaseConfig = {
   messagingSenderId: "920819692967"
 };
 
-// Initialize Firebase
-const app: FirebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth: Auth = getAuth(app);
+// Initialize Firebase for client-side usage
+function getClientSideFirebaseApp(): FirebaseApp {
+    if (typeof window !== 'undefined') {
+        return !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    }
+    // Return a dummy app for server-side rendering, though it shouldn't be used for auth
+    return getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+}
 
-export { app, auth };
+// Export a function to get auth, ensuring it's only called on the client
+export function getClientAuth(): Auth {
+    return getAuth(getClientSideFirebaseApp());
+}
