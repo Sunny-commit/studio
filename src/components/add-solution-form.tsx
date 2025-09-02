@@ -17,7 +17,7 @@ import type { Question } from '@/lib/types';
 import { reviewSolution, type ReviewSolutionOutput } from '@/ai/flows/review-solution';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from './ui/alert-dialog';
 import { paperCache } from '@/lib/paper-cache';
-import { useAuth } from '@/context/auth-context';
+import { mockUsers } from '@/lib/mock-data';
 
 const solutionSchema = z.object({
   solutionText: z.string().optional(),
@@ -35,7 +35,6 @@ interface AddSolutionFormProps {
 
 export function AddSolutionForm({ question, paperId, onSolutionAdded }: AddSolutionFormProps) {
   const { toast } = useToast();
-  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isReviewing, setIsReviewing] = useState(false);
   const [reviewResult, setReviewResult] = useState<ReviewSolutionOutput | null>(null);
@@ -50,11 +49,6 @@ export function AddSolutionForm({ question, paperId, onSolutionAdded }: AddSolut
   });
 
   const onSubmit = async (values: z.infer<typeof solutionSchema>) => {
-    if (!user) {
-      toast({ variant: 'destructive', title: 'Authentication Error', description: 'You must be logged in to submit a solution.' });
-      return;
-    }
-    
     setIsSubmitting(true);
     
     try {
@@ -71,7 +65,7 @@ export function AddSolutionForm({ question, paperId, onSolutionAdded }: AddSolut
         content = values.solutionText || '';
       }
       
-      const author = { id: user.id || 'anonymous', name: user.name, avatarUrl: user.picture, reputation: 0 };
+      const author = mockUsers[Math.floor(Math.random() * mockUsers.length)];
       
       paperCache.addSolution(paperId, question.id, { content, content_type: contentType }, author);
       
