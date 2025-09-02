@@ -13,7 +13,7 @@ import { z } from 'genkit';
 import type { QuestionPaper } from '@/lib/types';
 
 // We define the input schema for our flow.
-export const SemanticSearchInputSchema = z.object({
+const SemanticSearchInputSchema = z.object({
   query: z.string().describe('The user\'s natural language search query.'),
   // We pass the full paper objects to give the AI maximum context.
   papers: z.custom<QuestionPaper[]>().describe('The list of all available question papers.'),
@@ -21,7 +21,7 @@ export const SemanticSearchInputSchema = z.object({
 export type SemanticSearchInput = z.infer<typeof SemanticSearchInputSchema>;
 
 // The output will be a simple list of paper IDs that match the query.
-export const SemanticSearchOutputSchema = z.object({
+const SemanticSearchOutputSchema = z.object({
   matchingPaperIds: z.array(z.string()).describe('An array of paper IDs that best match the user\'s query.'),
 });
 export type SemanticSearchOutput = z.infer<typeof SemanticSearchOutputSchema>;
