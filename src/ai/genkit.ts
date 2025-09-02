@@ -8,9 +8,10 @@ export const ai = genkit({
     googleAI({
       apiVersion: 'v1beta',
     }),
-    next({
-      api: '/api/flows',
-    }),
+    // The next() plugin is used to configure Genkit for use with Next.js.
+    // By leaving it empty, it will automatically handle API route creation
+    // when the handler is exported from a route file.
+    next(),
   ],
   // Log errors to the console.
   logLevel: 'error',
