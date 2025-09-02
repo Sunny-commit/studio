@@ -1,69 +1,64 @@
+
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { runFlow } from '@genkit-ai/next/client';
 import { PaperSearch } from '@/components/paper-search';
 import { PaperCard } from '@/components/paper-card';
 import type { QuestionPaper } from '@/lib/types';
 import { paperCache } from '@/lib/paper-cache';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-
-type Filters = {
-  branch: string;
-  year: string;
-  subject: string;
-  yearOfStudy: string;
-  semester: string;
-  campus: string;
-  examType: string;
-};
+import { semanticSearch } from '@/ai/flows/semantic-search-flow';
+import { useDebounce } from 'use-debounce';
+import { Loader2 } from 'lucide-react';
 
 export default function DashboardPage() {
   const [allPapers, setAllPapers] = useState<QuestionPaper[]>([]);
-  const [filters, setFilters] = useState<Filters>({
-    branch: 'all',
-    year: 'all',
-    subject: '',
-    yearOfStudy: 'all',
-    semester: 'all',
-    campus: 'all',
-    examType: 'all',
-  });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
+  const [filteredPaperIds, setFilteredPaperIds] = useState<string[] | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  
+  // Memoize all papers into a map for quick lookups
+  const paperMap = new Map(allPapers.map(p => [p.id, p]));
 
   useEffect(() => {
     const papers = paperCache.getPapers();
     setAllPapers(papers);
+    // Initially, show all papers
+    setFilteredPaperIds(papers.map(p => p.id));
   }, []);
+  
+  const performSearch = useCallback(async (query: string) => {
+    if (!query) {
+      // If query is empty, show all papers
+      setFilteredPaperIds(allPapers.map(p => p.id));
+      setIsSearching(false);
+      return;
+    }
 
-  const filteredPapers = useMemo(() => {
-    let papers = [...allPapers];
-    if (filters.branch && filters.branch !== 'all') {
-      papers = papers.filter(p => p.branch === filters.branch);
+    setIsSearching(true);
+    try {
+      const result = await runFlow(semanticSearch, {
+        query: query,
+        papers: allPapers,
+      });
+      setFilteredPaperIds(result.matchingPaperIds);
+    } catch (error) {
+      console.error("AI Search failed:", error);
+      // Fallback to showing no results on error
+      setFilteredPaperIds([]);
+    } finally {
+      setIsSearching(false);
     }
-    if (filters.year && filters.year !== 'all') {
-      papers = papers.filter(p => p.year.toString() === filters.year);
-    }
-    if (filters.examType && filters.examType !== 'all') {
-      papers = papers.filter(p => p.examType === filters.examType);
-    }
-    if (filters.yearOfStudy && filters.yearOfStudy !== 'all') {
-      papers = papers.filter(p => p.yearOfStudy === filters.yearOfStudy);
-    }
-    if (filters.semester && filters.semester !== 'all') {
-      papers = papers.filter(p => p.semester.toString() === filters.semester);
-    }
-    if (filters.campus && filters.campus !== 'all') {
-        papers = papers.filter(p => p.campus === filters.campus);
-    }
-    if (filters.subject) {
-      papers = papers.filter(p => p.subject.toLowerCase().includes(filters.subject.toLowerCase()));
-    }
-    return papers;
-  }, [allPapers, filters]);
+  }, [allPapers]);
+  
+  useEffect(() => {
+    performSearch(debouncedSearchQuery);
+  }, [debouncedSearchQuery, performSearch]);
 
-  const handleSearch = (newFilters: Filters) => {
-    setFilters(newFilters);
-  };
+  const displayedPapers = filteredPaperIds ? filteredPaperIds.map(id => paperMap.get(id)).filter((p): p is QuestionPaper => !!p) : allPapers;
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8">
@@ -72,30 +67,37 @@ export default function DashboardPage() {
           Question Paper Dashboard
         </h1>
         <p className="max-w-[700px] text-lg text-muted-foreground">
-          Search through a vast library of past papers from your university. Filter by branch, year, and subject to quickly find what you need.
+          Use our new AI-powered search to find exactly what you need. Just ask a question like "final exams for CSE from last year".
         </p>
       </section>
 
-      <PaperSearch onSearch={handleSearch} initialFilters={filters} />
+      <PaperSearch onSearch={setSearchQuery} isSearching={isSearching} />
 
       <section className="mt-12">
-        <h2 className="font-headline text-3xl font-bold tracking-tight mb-6">
-          Available Papers ({filteredPapers.length})
-        </h2>
-        {filteredPapers.length > 0 ? (
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="font-headline text-3xl font-bold tracking-tight">
+            Available Papers ({displayedPapers.length})
+          </h2>
+           {isSearching && <Loader2 className="h-6 w-6 animate-spin text-primary" />}
+        </div>
+        
+        {displayedPapers.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredPapers.map((paper) => (
+            {displayedPapers.map((paper) => (
               <PaperCard key={paper.id} paper={paper} />
             ))}
           </div>
-        ) : (
+        ) : !isSearching ? (
           <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-20 text-center">
              <h3 className="text-xl font-semibold">No Papers Found</h3>
-             <p className="text-muted-foreground mt-2 max-w-sm">Try adjusting your search filters, or be the first to contribute a paper for this category!</p>
+             <p className="text-muted-foreground mt-2 max-w-sm">Try adjusting your search query, or be the first to contribute a paper!</p>
              <Button asChild className="mt-4">
                 <Link href="/submit-paper">Submit a Paper</Link>
              </Button>
           </div>
+        ) : (
+          // Don't show the "No Papers Found" message while searching
+          <div /> 
         )}
       </section>
     </div>

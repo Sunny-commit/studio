@@ -6,3 +6,4 @@
 import './private-chat-flow';
 import './review-solution';
 import './extract-questions-flow';
+import './semantic-search-flow';
