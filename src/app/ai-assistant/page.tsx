@@ -14,8 +14,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { privateChat } from '@/ai/flows/private-chat-flow';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { useAuth } from '@/context/auth-context';
 
 const chatSchema = z.object({
   questionText: z.string().min(1, 'Please enter a question.'),
@@ -29,6 +30,7 @@ type ChatMessage = {
 
 export default function AIAssistantPage() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
@@ -75,7 +77,7 @@ export default function AIAssistantPage() {
       toast({
         variant: 'destructive',
         title: 'AI Assistant Failed',
-        description: 'Could not get a response from the AI. Please ensure your API key is configured correctly in the .env file and try again.',
+        description: 'Could not get a response from the AI. Please ensure your API key is configured correctly and try again.',
       });
     } finally {
       setIsSubmitting(false);
@@ -128,7 +130,11 @@ export default function AIAssistantPage() {
                     </div>
                      {message.sender === 'user' && (
                       <Avatar className="h-8 w-8">
-                        <AvatarFallback><User size={20} /></AvatarFallback>
+                         {user?.picture ? (
+                            <AvatarImage src={user.picture} alt={user.name} />
+                         ) : (
+                            <AvatarFallback><User size={20} /></AvatarFallback>
+                         )}
                       </Avatar>
                     )}
                   </div>
