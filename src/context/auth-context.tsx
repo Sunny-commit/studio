@@ -39,12 +39,18 @@ const getUserFromCookie = (): AuthenticatedUser | null => {
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<AuthenticatedUser | null>(getUserFromCookie());
+  const [user, setUser] = useState<AuthenticatedUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
+    // Try to get user from cookie first for faster initial load
+    const cookieUser = getUserFromCookie();
+    if (cookieUser) {
+        setUser(cookieUser);
+    }
+    
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
         const idToken = await firebaseUser.getIdToken();
@@ -73,7 +79,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       await signInWithPopup(auth, provider);
       // onAuthStateChanged will handle setting the user and cookie
-      router.push('/dashboard');
+      const redirectUrl = new URLSearchParams(window.location.search).get('redirect') || '/dashboard';
+      router.push(redirectUrl);
     } catch (error) {
       console.error('Error signing in with Google', error);
       setLoading(false);
@@ -92,13 +99,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   // Route protection
   const protectedRoutes = ['/ai-assistant', '/submit-paper', '/leaderboard', '/setup-profile'];
+  const isProtectedRoute = protectedRoutes.includes(pathname);
+
   useEffect(() => {
-    if (!loading && !user && protectedRoutes.includes(pathname)) {
+    if (!loading && !user && isProtectedRoute) {
         router.push(`/login?redirect=${pathname}`);
     }
-   }, [user, loading, pathname, router]);
+   }, [user, loading, pathname, router, isProtectedRoute]);
 
-  if (loading) {
+  if (loading || (!user && isProtectedRoute)) {
     return (
         <div className="flex h-screen items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
