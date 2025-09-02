@@ -39,23 +39,21 @@ const getUserFromCookie = (): AuthenticatedUser | null => {
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<AuthenticatedUser | null>(null);
+  const [user, setUser] = useState<AuthenticatedUser | null>(getUserFromCookie());
   const [loading, setLoading] = useState(true);
   const [auth, setAuth] = useState<Auth | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    // Initialize auth only on the client side
     const authInstance = getClientAuth();
     setAuth(authInstance);
+  }, []);
 
-    const cookieUser = getUserFromCookie();
-    if (cookieUser) {
-        setUser(cookieUser);
-    }
-    
-    const unsubscribe = onAuthStateChanged(authInstance, async (firebaseUser: FirebaseUser | null) => {
+  useEffect(() => {
+    if (!auth) return;
+
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
         const idToken = await firebaseUser.getIdToken();
         const decodedToken: { name?: string; email?: string; picture?: string } = jwtDecode(idToken);
@@ -75,7 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [auth]);
 
   const signInWithGoogle = async () => {
     if (!auth) return;
