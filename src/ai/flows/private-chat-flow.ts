@@ -10,8 +10,18 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { extractQuestionsFromPaper, ExtractQuestionsOutputSchema } from './extract-questions-flow';
+import { extractQuestionsFromPaper } from './extract-questions-flow';
 import { paperCache } from '@/lib/paper-cache';
+
+// Define the schema for extracted questions here since we can't import it.
+const QuestionSchema = z.object({
+  questionNumber: z.string().describe('The number of the question, e.g., "1(a)" or "2".'),
+  text: z.string().describe('The full text of the question.'),
+});
+
+const ExtractQuestionsOutputSchema = z.object({
+  questions: z.array(QuestionSchema).describe('The list of questions extracted from the paper.'),
+});
 
 
 const PrivateChatInputSchema = z.object({
@@ -100,5 +110,3 @@ Please provide a helpful and encouraging response to the user. If their question
     return output!;
   }
 );
-
-    

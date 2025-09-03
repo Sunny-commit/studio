@@ -15,7 +15,7 @@ const QuestionSchema = z.object({
   text: z.string().describe('The full text of the question.'),
 });
 
-export const ExtractQuestionsInputSchema = z.object({
+const ExtractQuestionsInputSchema = z.object({
   paperDataUri: z
     .string()
     .describe(
@@ -24,7 +24,7 @@ export const ExtractQuestionsInputSchema = z.object({
 });
 export type ExtractQuestionsInput = z.infer<typeof ExtractQuestionsInputSchema>;
 
-export const ExtractQuestionsOutputSchema = z.object({
+const ExtractQuestionsOutputSchema = z.object({
   questions: z.array(QuestionSchema).describe('The list of questions extracted from the paper.'),
 });
 export type ExtractQuestionsOutput = z.infer<typeof ExtractQuestionsOutputSchema>;
