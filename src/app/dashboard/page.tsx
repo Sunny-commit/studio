@@ -31,7 +31,7 @@ export default function DashboardPage() {
   }, []);
   
   const performSearch = useCallback(async (query: string) => {
-    if (!query) {
+    if (!query.trim()) {
       // If query is empty, show all papers
       setFilteredPaperIds(allPapers.map(p => p.id));
       setIsSearching(false);
@@ -55,22 +55,10 @@ export default function DashboardPage() {
   }, [allPapers]);
   
   useEffect(() => {
-    // This is a temporary filter based on the search query.
-    // A more robust solution would involve multiple filter criteria.
-    if (searchQuery) {
-        const filtered = allPapers.filter(paper => 
-            paper.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            paper.branch.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            paper.examType.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            paper.year.toString().includes(searchQuery.toLowerCase())
-        );
-        setFilteredPaperIds(filtered.map(p => p.id));
-    } else {
-        setFilteredPaperIds(allPapers.map(p => p.id));
-    }
-  }, [searchQuery, allPapers]);
+    performSearch(debouncedSearchQuery);
+  }, [debouncedSearchQuery, performSearch]);
 
-  const displayedPapers = filteredPaperIds ? filteredPaperIds.map(id => paperMap.get(id)).filter((p): p is QuestionPaper => !!p) : allPapers;
+  const displayedPapers = filteredPaperIds ? filteredPaperIds.map(id => paperMap.get(id)).filter((p): p is QuestionPaper => !!p) : [];
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8">

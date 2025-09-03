@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
-import { Search, BrainCircuit } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 interface PaperSearchProps {
     onSearch: (query: string) => void;
@@ -14,6 +14,8 @@ export function PaperSearch({ onSearch }: PaperSearchProps) {
   const [query, setQuery] = useState('');
 
   useEffect(() => {
+    // This effect is now just for passing the query up.
+    // The debouncing and search logic is handled in the dashboard page.
     onSearch(query);
   }, [query, onSearch]);
 
@@ -26,7 +28,7 @@ export function PaperSearch({ onSearch }: PaperSearchProps) {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Search by subject, branch, year..."
+          placeholder="Search by subject, branch, year, or ask a question..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="pl-9 text-base"
