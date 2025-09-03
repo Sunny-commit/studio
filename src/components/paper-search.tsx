@@ -62,10 +62,16 @@ export function PaperSearch({ onFiltersChange }: PaperSearchProps) {
   const isP1OrP2 = ['P1', 'P2'].includes(filters.yearOfStudy);
 
   useEffect(() => {
-    if (isP1OrP2 && filters.branch !== 'common') {
+    if (isP1OrP2) {
         handleFilterChange('branch', 'common');
+    } else {
+        // Optional: Reset to 'all' if user switches away from P1/P2
+        // and branch was 'common'
+        if(filters.branch === 'common'){
+            handleFilterChange('branch', 'all');
+        }
     }
-  }, [isP1OrP2, filters.branch]);
+  }, [isP1OrP2]);
 
   return (
     <div className="rounded-lg border bg-card p-6 shadow-md">
@@ -101,12 +107,14 @@ export function PaperSearch({ onFiltersChange }: PaperSearchProps) {
             {yearsOfStudy.map(y => <SelectItem key={y} value={y}>{y === 'all' ? 'All Years of Study' : y}</SelectItem>)}
           </SelectContent>
         </Select>
-         <Select value={filters.branch} onValueChange={(value) => handleFilterChange('branch', value)} disabled={isP1OrP2}>
-          <SelectTrigger><SelectValue placeholder="Select branch" /></SelectTrigger>
-          <SelectContent>
-            {branches.map(b => <SelectItem key={b} value={b}>{b === 'all' ? 'All Branches' : b}</SelectItem>)}
-          </SelectContent>
-        </Select>
+         {!isP1OrP2 && (
+            <Select value={filters.branch} onValueChange={(value) => handleFilterChange('branch', value)}>
+              <SelectTrigger><SelectValue placeholder="Select branch" /></SelectTrigger>
+              <SelectContent>
+                {branches.map(b => <SelectItem key={b} value={b}>{b === 'all' ? 'All Branches' : b}</SelectItem>)}
+              </SelectContent>
+            </Select>
+         )}
         <Select value={filters.campus} onValueChange={(value) => handleFilterChange('campus', value)}>
           <SelectTrigger><SelectValue placeholder="Select campus" /></SelectTrigger>
           <SelectContent>
