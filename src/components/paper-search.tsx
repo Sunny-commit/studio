@@ -3,36 +3,119 @@
 
 import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search } from 'lucide-react';
+import { Button } from './ui/button';
 
-interface PaperSearchProps {
-    onSearch: (query: string) => void;
-    isSearching: boolean;
+const years = ['all', '2024', '2023', '2022', '2021', '2020'];
+const examTypes = ['all', 'mid1', 'mid2', 'mid3', 'Final Sem Exam'];
+const branches = ['all', 'CSE', 'ECE', 'MECH', 'CIVIL', 'common'];
+const campuses = ['all', 'RK Valley', 'Nuzvid', 'Srikakulam', 'Ongole'];
+const yearsOfStudy = ['all', 'P1', 'P2', 'E1', 'E2', 'E3', 'E4'];
+const semesters = ['all', '1', '2'];
+
+export interface PaperSearchFilters {
+  query: string;
+  year: string;
+  examType: string;
+  branch: string;
+  campus: string;
+  yearOfStudy: string;
+  semester: string;
 }
 
-export function PaperSearch({ onSearch }: PaperSearchProps) {
-  const [query, setQuery] = useState('');
+interface PaperSearchProps {
+  onFiltersChange: (filters: PaperSearchFilters) => void;
+}
+
+export function PaperSearch({ onFiltersChange }: PaperSearchProps) {
+  const [filters, setFilters] = useState<PaperSearchFilters>({
+    query: '',
+    year: 'all',
+    examType: 'all',
+    branch: 'all',
+    campus: 'all',
+    yearOfStudy: 'all',
+    semester: 'all',
+  });
+
+  const handleFilterChange = <K extends keyof PaperSearchFilters>(key: K, value: PaperSearchFilters[K]) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
 
   useEffect(() => {
-    // This effect is now just for passing the query up.
-    // The debouncing and search logic is handled in the dashboard page.
-    onSearch(query);
-  }, [query, onSearch]);
+    onFiltersChange(filters);
+  }, [filters, onFiltersChange]);
+  
+  const resetFilters = () => {
+    setFilters({
+      query: '',
+      year: 'all',
+      examType: 'all',
+      branch: 'all',
+      campus: 'all',
+      yearOfStudy: 'all',
+      semester: 'all',
+    });
+  }
+
+  const isP1OrP2 = ['P1', 'P2'].includes(filters.yearOfStudy);
+
+  useEffect(() => {
+    if (isP1OrP2 && filters.branch !== 'common') {
+        handleFilterChange('branch', 'common');
+    }
+  }, [isP1OrP2, filters.branch]);
 
   return (
     <div className="rounded-lg border bg-card p-6 shadow-md">
       <div className="flex items-center mb-4">
         <Search className="mr-2 h-5 w-5 text-primary" />
-        <h3 className="font-headline text-xl font-semibold">Search Papers</h3>
+        <h3 className="font-headline text-xl font-semibold">Search & Filter Papers</h3>
       </div>
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search by subject, branch, year, or ask a question..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="pl-9 text-base"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="relative col-span-1 lg:col-span-2">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by subject name..."
+            value={filters.query}
+            onChange={(e) => handleFilterChange('query', e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Select value={filters.year} onValueChange={(value) => handleFilterChange('year', value)}>
+          <SelectTrigger><SelectValue placeholder="Select year" /></SelectTrigger>
+          <SelectContent>
+            {years.map(y => <SelectItem key={y} value={y}>{y === 'all' ? 'All Years' : y}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filters.examType} onValueChange={(value) => handleFilterChange('examType', value)}>
+          <SelectTrigger><SelectValue placeholder="Select exam type" /></SelectTrigger>
+          <SelectContent>
+            {examTypes.map(e => <SelectItem key={e} value={e}>{e === 'all' ? 'All Exam Types' : e}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filters.yearOfStudy} onValueChange={(value) => handleFilterChange('yearOfStudy', value)}>
+          <SelectTrigger><SelectValue placeholder="Select year of study" /></SelectTrigger>
+          <SelectContent>
+            {yearsOfStudy.map(y => <SelectItem key={y} value={y}>{y === 'all' ? 'All Years of Study' : y}</SelectItem>)}
+          </SelectContent>
+        </Select>
+         <Select value={filters.branch} onValueChange={(value) => handleFilterChange('branch', value)} disabled={isP1OrP2}>
+          <SelectTrigger><SelectValue placeholder="Select branch" /></SelectTrigger>
+          <SelectContent>
+            {branches.map(b => <SelectItem key={b} value={b}>{b === 'all' ? 'All Branches' : b}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filters.campus} onValueChange={(value) => handleFilterChange('campus', value)}>
+          <SelectTrigger><SelectValue placeholder="Select campus" /></SelectTrigger>
+          <SelectContent>
+            {campuses.map(c => <SelectItem key={c} value={c}>{c === 'all' ? 'All Campuses' : c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <div className="flex items-center justify-end">
+            <Button onClick={resetFilters} variant="outline">Reset Filters</Button>
+        </div>
       </div>
     </div>
   );
