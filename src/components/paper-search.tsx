@@ -71,6 +71,7 @@ export function PaperSearch({ onFiltersChange }: PaperSearchProps) {
             handleFilterChange('branch', 'all');
         }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isP1OrP2]);
 
   return (
@@ -80,7 +81,7 @@ export function PaperSearch({ onFiltersChange }: PaperSearchProps) {
         <h3 className="font-headline text-xl font-semibold">Search & Filter Papers</h3>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="relative col-span-1 lg:col-span-2">
+        <div className="relative col-span-1 md:col-span-2 lg:col-span-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search by subject name..."
@@ -121,7 +122,13 @@ export function PaperSearch({ onFiltersChange }: PaperSearchProps) {
             {campuses.map(c => <SelectItem key={c} value={c}>{c === 'all' ? 'All Campuses' : c}</SelectItem>)}
           </SelectContent>
         </Select>
-        <div className="flex items-center justify-end">
+        <Select value={filters.semester} onValueChange={(value) => handleFilterChange('semester', value)}>
+          <SelectTrigger><SelectValue placeholder="Select semester" /></SelectTrigger>
+          <SelectContent>
+            {semesters.map(s => <SelectItem key={s} value={s}>{s === 'all' ? 'All Semesters' : `Sem ${s}`}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <div className="flex items-center justify-end md:col-start-2 lg:col-start-4">
             <Button onClick={resetFilters} variant="outline">Reset Filters</Button>
         </div>
       </div>
