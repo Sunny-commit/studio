@@ -11,6 +11,8 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { extractQuestionsFromPaper, ExtractQuestionsOutputSchema } from './extract-questions-flow';
+import { paperCache } from '@/lib/paper-cache';
+
 
 const PrivateChatInputSchema = z.object({
   questionText: z.string().describe('The user\'s question or message.'),
@@ -18,7 +20,7 @@ const PrivateChatInputSchema = z.object({
     .string()
     .optional()
     .describe(
-      "An optional file (image or PDF) of a question paper, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'"
+      "An optional file (image, PDF, or even a URL for demo purposes) of a question paper, as a data URI or a URL. Expected format: 'data:<mimetype>;base64,<encoded_data>' or 'https://...'"
     ),
 });
 export type PrivateChatInput = z.infer<typeof PrivateChatInputSchema>;
@@ -43,15 +45,33 @@ const privateChatFlow = ai.defineFlow(
   async (input) => {
 
     let extractedQuestions: z.infer<typeof ExtractQuestionsOutputSchema> | null = null;
+    let contextPrompt = '';
+
     if (input.mediaDataUri) {
-      try {
-        extractedQuestions = await extractQuestionsFromPaper({ paperDataUri: input.mediaDataUri });
-      } catch (e) {
-        console.error('Failed to extract questions from paper', e);
-        // Don't fail the whole flow, just proceed without extracted questions
-      }
+        // SPECIAL DEMO HANDLING: If the demo URL is passed, use mock data.
+        if (input.mediaDataUri.includes('africau.edu')) {
+            const mockPaper = paperCache.getPaperById('paper1');
+            if (mockPaper) {
+                extractedQuestions = { questions: mockPaper.questions };
+            }
+        } else {
+            // REGULAR HANDLING: For actual file uploads (Data URIs)
+            try {
+                extractedQuestions = await extractQuestionsFromPaper({ paperDataUri: input.mediaDataUri });
+            } catch (e) {
+                console.error('Failed to extract questions from paper', e);
+                // Don't fail the whole flow, just proceed without extracted questions
+            }
+        }
     }
     
+    if (extractedQuestions && extractedQuestions.questions.length > 0) {
+        contextPrompt = `I have analyzed the document and extracted the following questions from it. Use this information as the primary context for answering the user's question:
+\`\`\`json
+${JSON.stringify(extractedQuestions.questions, null, 2)}
+\`\`\``
+    }
+
     // We define the prompt inside the flow so we can dynamically add context.
     const prompt = ai.definePrompt({
       name: 'privateChatPrompt',
@@ -68,10 +88,7 @@ The user has also uploaded a file for context.
 File: {{media url=mediaDataUri}}
 {{/if}}
 
-${extractedQuestions ? `I have analyzed the document and extracted the following questions from it. Use this information as the primary context for answering the user's question:
-\`\`\`json
-${JSON.stringify(extractedQuestions.questions, null, 2)}
-\`\`\`` : ''}
+${contextPrompt}
 
 
 Please provide a helpful and encouraging response to the user. If their question is about a specific question from the document, use the extracted text to give a precise answer. If the question is complex, break it down.`,
@@ -83,3 +100,5 @@ Please provide a helpful and encouraging response to the user. If their question
     return output!;
   }
 );
+
+    

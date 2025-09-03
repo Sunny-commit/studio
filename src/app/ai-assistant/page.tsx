@@ -6,7 +6,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { runFlow } from '@genkit-ai/next/client';
-import { Bot, Loader2, Paperclip, Send, User } from 'lucide-react';
+import { Bot, Loader2, Paperclip, Send, User, Wand2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,22 +48,17 @@ export default function AIAssistantPage() {
       reader.onerror = (error) => reject(error);
     });
 
-  const onSubmit = async (values: z.infer<typeof chatSchema>) => {
+  const sendChatMessage = async (question: string, mediaUri?: string) => {
     setIsSubmitting(true);
-    const userMessage: ChatMessage = { sender: 'user', text: values.questionText };
+    const userMessage: ChatMessage = { sender: 'user', text: question };
     setChatHistory((prev) => [...prev, userMessage]);
     form.reset({ questionText: '' });
     setMediaPreview(null); // Clear preview after sending
 
     try {
-      let mediaDataUri: string | undefined = undefined;
-      if (values.mediaFile && values.mediaFile[0]) {
-        mediaDataUri = await toBase64(values.mediaFile[0]);
-      }
-      
       const result = await runFlow(privateChat, {
-        questionText: values.questionText,
-        mediaDataUri: mediaDataUri,
+        questionText: question,
+        mediaDataUri: mediaUri,
       });
 
       const aiMessage: ChatMessage = { sender: 'ai', text: result.answer };
@@ -81,6 +76,14 @@ export default function AIAssistantPage() {
       setIsSubmitting(false);
     }
   };
+
+  const onSubmit = async (values: z.infer<typeof chatSchema>) => {
+    let mediaDataUri: string | undefined = undefined;
+    if (values.mediaFile && values.mediaFile[0]) {
+      mediaDataUri = await toBase64(values.mediaFile[0]);
+    }
+    await sendChatMessage(values.questionText, mediaDataUri);
+  };
   
    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -90,25 +93,43 @@ export default function AIAssistantPage() {
       setMediaPreview(null);
     }
   };
+  
+  const runDemo = async () => {
+    // This is a special demo case that uses a known PDF URL
+    // The AI flow is designed to work with this URL for demonstration
+    const demoPdfUrl = 'https://www.africau.edu/images/default/sample.pdf';
+    const demoQuestion = 'Can you help me solve question 1(a) from the math paper?';
+
+    setChatHistory([]); // Clear chat for demo
+    await sendChatMessage(demoQuestion, demoPdfUrl);
+  };
 
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8 flex h-[calc(100vh-8rem)] justify-center">
       <Card className="w-full max-w-3xl flex flex-col">
         <CardHeader className="border-b">
-          <CardTitle className="flex items-center gap-3 font-headline text-2xl">
-            <Bot className="h-8 w-8 text-primary" />
-            Your Private AI Assistant
-          </CardTitle>
-          <CardDescription>
-            Get one-on-one help. Upload a paper or ask a question directly.
-          </CardDescription>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle className="flex items-center gap-3 font-headline text-2xl">
+                <Bot className="h-8 w-8 text-primary" />
+                Your Private AI Assistant
+              </CardTitle>
+              <CardDescription>
+                Get one-on-one help. Upload a paper or ask a question directly.
+              </CardDescription>
+            </div>
+            <Button variant="outline" onClick={runDemo} disabled={isSubmitting}>
+              <Wand2 className="mr-2 h-4 w-4" />
+              Run Demo
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col p-0">
           <ScrollArea className="flex-1 p-6">
             <div className="space-y-6">
               {chatHistory.length === 0 ? (
-                 <div className="text-center text-muted-foreground">Ask a question to start the conversation.</div>
+                 <div className="text-center text-muted-foreground">Ask a question, upload a file, or run the demo to start.</div>
               ) : (
                 chatHistory.map((message, index) => (
                   <div key={index} className={`flex items-start gap-3 ${message.sender === 'user' ? 'justify-end' : ''}`}>
@@ -219,3 +240,5 @@ export default function AIAssistantPage() {
     </div>
   );
 }
+
+    
