@@ -11,9 +11,8 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { extractQuestionsFromPaper } from './extract-questions-flow';
-import { paperCache } from '@/lib/paper-cache';
 
-// Define the schema for extracted questions here since we can't import it.
+// Define the schema for extracted questions here since we can't import it from the other flow file.
 const QuestionSchema = z.object({
   questionNumber: z.string().describe('The number of the question, e.g., "1(a)" or "2".'),
   text: z.string().describe('The full text of the question.'),
@@ -30,7 +29,7 @@ const PrivateChatInputSchema = z.object({
     .string()
     .optional()
     .describe(
-      "An optional file (image, PDF, or even a URL for demo purposes) of a question paper, as a data URI or a URL. Expected format: 'data:<mimetype>;base64,<encoded_data>' or 'https://...'"
+      "An optional file (image or PDF) of a question paper, as a data URI that must include a MIME type and use Base64 encoding. It can also be a URL for web-hosted files. Expected format: 'data:<mimetype>;base64,<encoded_data>' or 'https://...'"
     ),
 });
 export type PrivateChatInput = z.infer<typeof PrivateChatInputSchema>;
@@ -40,7 +39,7 @@ const PrivateChatOutputSchema = z.object({
 });
 export type PrivateChatOutput = z.infer<typeof PrivateChatOutputSchema>;
 
-// This is the exported function our frontend will call.
+
 export async function privateChat(input: PrivateChatInput): Promise<PrivateChatOutput> {
   return privateChatFlow(input);
 }
@@ -58,15 +57,10 @@ const privateChatFlow = ai.defineFlow(
     let contextPrompt = '';
 
     if (input.mediaDataUri) {
-        // SPECIAL DEMO HANDLING: If the demo URL is passed, use mock data.
-        if (input.mediaDataUri.includes('africau.edu')) {
-            const mockPaper = paperCache.getPaperById('paper1');
-            if (mockPaper) {
-                extractedQuestions = { questions: mockPaper.questions };
-            }
-        } else {
-            // REGULAR HANDLING: For actual file uploads (Data URIs)
-            try {
+        // We can pass data URIs or URLs directly to the model.
+        // If it's a data URI, we can also try to extract questions for better context.
+        if (input.mediaDataUri.startsWith('data:')) {
+             try {
                 extractedQuestions = await extractQuestionsFromPaper({ paperDataUri: input.mediaDataUri });
             } catch (e) {
                 console.error('Failed to extract questions from paper', e);
@@ -101,7 +95,7 @@ File: {{media url=mediaDataUri}}
 ${contextPrompt}
 
 
-Please provide a helpful and encouraging response to the user. If their question is about a specific question from the document, use the extracted text to give a precise answer. If the question is complex, break it down.`,
+Please provide a helpful and encouraging response to the user. If their question is about a specific question from the document, use the extracted text (if available) to give a precise answer. If the question is complex, break it down.`,
       model: 'googleai/gemini-1.5-flash',
     });
 

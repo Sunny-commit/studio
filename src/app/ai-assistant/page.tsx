@@ -98,7 +98,7 @@ export default function AIAssistantPage() {
     // This is a special demo case that uses a known PDF URL
     // The AI flow is designed to work with this URL for demonstration
     const demoPdfUrl = 'https://www.africau.edu/images/default/sample.pdf';
-    const demoQuestion = 'Can you help me solve question 1(a) from the math paper?';
+    const demoQuestion = 'Can you summarize what this document is about?';
 
     setChatHistory([]); // Clear chat for demo
     await sendChatMessage(demoQuestion, demoPdfUrl);
@@ -240,5 +240,3 @@ export default function AIAssistantPage() {
     </div>
   );
 }
-
-    
