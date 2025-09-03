@@ -55,8 +55,20 @@ export default function DashboardPage() {
   }, [allPapers]);
   
   useEffect(() => {
-    performSearch(debouncedSearchQuery);
-  }, [debouncedSearchQuery, performSearch]);
+    // This is a temporary filter based on the search query.
+    // A more robust solution would involve multiple filter criteria.
+    if (searchQuery) {
+        const filtered = allPapers.filter(paper => 
+            paper.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            paper.branch.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            paper.examType.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            paper.year.toString().includes(searchQuery.toLowerCase())
+        );
+        setFilteredPaperIds(filtered.map(p => p.id));
+    } else {
+        setFilteredPaperIds(allPapers.map(p => p.id));
+    }
+  }, [searchQuery, allPapers]);
 
   const displayedPapers = filteredPaperIds ? filteredPaperIds.map(id => paperMap.get(id)).filter((p): p is QuestionPaper => !!p) : allPapers;
 

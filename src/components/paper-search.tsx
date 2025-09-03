@@ -20,13 +20,13 @@ export function PaperSearch({ onSearch }: PaperSearchProps) {
   return (
     <div className="rounded-lg border bg-card p-6 shadow-md">
       <div className="flex items-center mb-4">
-        <BrainCircuit className="mr-2 h-5 w-5 text-primary" />
-        <h3 className="font-headline text-xl font-semibold">AI Powered Search</h3>
+        <Search className="mr-2 h-5 w-5 text-primary" />
+        <h3 className="font-headline text-xl font-semibold">Search Papers</h3>
       </div>
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Search papers with natural language..."
+          placeholder="Search by subject, branch, year..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="pl-9 text-base"
