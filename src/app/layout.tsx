@@ -7,7 +7,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'SolveAI',
-  description: 'A community-driven database of solved university exam questions.',
+  description: 'The collaborative platform to find, solve, and share university exam questions. Ace your exams with community-powered solutions and AI assistance.',
 };
 
 export default function RootLayout({

@@ -39,6 +39,7 @@ export default function LandingPage() {
                 alt="Students collaborating"
                 data-ai-hint="students collaborating"
                 className="rounded-xl shadow-2xl aspect-video object-cover"
+                priority
              />
           </div>
         </div>
